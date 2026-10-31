@@ -3,7 +3,7 @@
  */
 import type { GraphNode, FlatRow, Row } from './model';
 import { toggleRow } from './model';
-import { computeBounds, type BoundingBox } from './layout';
+import type { BoundingBox } from './layout';
 
 export interface ViewportState {
   panX: number;

@@ -21,11 +21,6 @@
             </svg>
             <span>JSON Inspector</span>
           </span>
-          <nav class="menu-bar" aria-label="Application menu">
-            <button class="menu-btn" type="button">File</button>
-            <button class="menu-btn" type="button">View</button>
-            <button class="menu-btn" type="button">Tools</button>
-          </nav>
         </div>
         <div class="toolbar-center">
           <div class="search-box" role="search">
@@ -65,16 +60,12 @@
         <!-- Left pane: Editor -->
         <section class="pane editor-pane" aria-label="JSON Editor">
           <div class="pane-header">
-            <div class="tab-bar" role="tablist">
-              <button class="tab active" role="tab" aria-selected="true" data-tab="json">JSON</button>
-              <button class="tab" role="tab" aria-selected="false" data-tab="yaml" disabled>YAML</button>
-              <button class="tab" role="tab" aria-selected="false" data-tab="ui-view" disabled>UI View</button>
-            </div>
+            <span class="pane-title">JSON</span>
             <div class="pane-actions">
               <button class="text-btn" type="button" id="btn-format" title="Format JSON">Format</button>
               <button class="text-btn" type="button" id="btn-sample" title="Load sample data">Sample</button>
               <button class="text-btn" type="button" id="btn-open" title="Open file">Open</button>
-              <input type="file" id="file-input" accept=".json,.jsonl,.geojson" hidden />
+              <input type="file" id="file-input" accept=".json,.geojson" hidden />
             </div>
           </div>
           <div id="editor-container" class="editor-container"></div>
@@ -86,13 +77,7 @@
         <!-- Right pane: Graph -->
         <section class="pane graph-pane" aria-label="JSON Graph">
           <div class="pane-header graph-header">
-            <button class="icon-btn hamburger" type="button" aria-label="Graph options">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            </button>
-            <div class="graph-tabs">
-              <button class="graph-tab active" data-graph="1">Graph 1</button>
-              <button class="graph-tab" data-graph="2" disabled>Graph 2</button>
-            </div>
+            <span class="pane-title">Graph</span>
           </div>
           <div id="graph-viewport" class="graph-viewport">
             <svg id="graph-svg" class="graph-svg" xmlns="http://www.w3.org/2000/svg">

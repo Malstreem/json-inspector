@@ -2,7 +2,7 @@
  * SVG renderer for the JSON graph.
  * Builds an SVG string from the laid-out node tree.
  */
-import type { GraphNode, Row, FlatRow } from './model';
+import type { GraphNode, FlatRow } from './model';
 import { flattenRows } from './model';
 
 const ROW_H = 26;

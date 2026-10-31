@@ -4,13 +4,14 @@
  */
 import './styles/index.css';
 import { createEditor, type EditorInstance } from './editor/setup';
-import { buildGraph, collapseAll, expandAll, type GraphNode, type FlatRow } from './graph/model';
+import { buildGraph, collapseAll, expandAll, flattenRows, type GraphNode, type FlatRow } from './graph/model';
 import { layoutNode, computeBounds } from './graph/layout';
 import { renderGraph, exportSVG } from './graph/render';
 import { GraphInteractions, searchNodes } from './graph/interactions';
 import { initStatusBar, setNodeCount, setParseTime, setError, clearError } from './ui/status-bar';
 import { initPaneResizer } from './ui/pane-resizer';
 import { getSampleJSON } from './data/sample';
+import { parseJson } from './json/parse';
 
 // ===== State =====
 let editor: EditorInstance;
@@ -19,6 +20,7 @@ let currentRoot: GraphNode | null = null;
 let currentFlatRows: FlatRow[] = [];
 let searchMatches: number[] = [];
 let searchIndex = 0;
+let searchQuery = '';
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ===== DOM Refs =====
@@ -29,27 +31,23 @@ const graphSvg = () => document.getElementById('graph-svg') as unknown as SVGSVG
 
 function parseAndRender(jsonStr: string): void {
   if (!jsonStr.trim()) {
-    graphGroup().innerHTML = '';
-    setNodeCount(0);
+    clearGraph();
     clearError();
-    currentRoot = null;
-    currentFlatRows = [];
     return;
   }
 
   const t0 = performance.now();
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonStr);
-  } catch (e) {
-    setError((e as Error).message);
+  const result = parseJson(jsonStr);
+  const parseTime = performance.now() - t0;
+  if (!result.ok) {
+    clearGraph();
+    setError(result.error);
     return;
   }
-  const parseTime = performance.now() - t0;
 
   clearError();
 
-  const { root, nodeCount } = buildGraph(parsed);
+  const { root, nodeCount } = buildGraph(result.value);
   currentRoot = root;
 
   layoutNode(root, 0, 0, 0);
@@ -59,30 +57,48 @@ function parseAndRender(jsonStr: string): void {
   setParseTime(parseTime);
 }
 
+function clearGraph(): void {
+  graphGroup().innerHTML = '';
+  currentRoot = null;
+  currentFlatRows = [];
+  searchMatches = [];
+  searchIndex = 0;
+  setNodeCount(0);
+
+  if (interactions) {
+    interactions.setFlatRows([]);
+  }
+}
+
 function redraw(): void {
   if (!currentRoot) return;
 
   // Re-layout from scratch (positions may have changed due to collapse/expand)
   layoutNode(currentRoot, 0, 0, 0);
 
+  currentFlatRows = flattenRows(currentRoot);
+  searchMatches = searchNodes(currentFlatRows, searchQuery);
+  searchIndex = searchMatches.length ? searchIndex % searchMatches.length : 0;
   const highlightSet = new Set(searchMatches);
-  const { svg, flatRows } = renderGraph(currentRoot, highlightSet);
-  currentFlatRows = flatRows;
+  const { svg } = renderGraph(currentRoot, highlightSet);
 
   graphGroup().innerHTML = svg;
 
   if (interactions) {
-    interactions.setFlatRows(flatRows);
+    interactions.setFlatRows(currentFlatRows);
   }
 }
 
 // ===== Search =====
 
 function handleSearch(query: string): void {
-  if (!currentRoot) return;
-  // We need flatRows from the current render
-  searchMatches = searchNodes(currentFlatRows, query);
+  searchQuery = query;
   searchIndex = 0;
+  if (!currentRoot) {
+    searchMatches = [];
+    return;
+  }
+
   redraw();
 
   if (searchMatches.length > 0) {
@@ -105,14 +121,15 @@ function centerOnMatch(idx: number): void {
 
 // ===== File Open =====
 
-function openFile(file: File): void {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const text = reader.result as string;
+async function openFile(file: File): Promise<void> {
+  try {
+    const text = await file.text();
     editor.setValue(text);
     parseAndRender(text);
-  };
-  reader.readAsText(file);
+  } catch (error) {
+    const detail = error instanceof Error ? `: ${error.message}` : '';
+    setError(`Unable to read ${file.name}${detail}`);
+  }
 }
 
 // ===== Export SVG =====
@@ -135,14 +152,16 @@ function doExportSVG(): void {
 
 function formatJSON(): void {
   const text = editor.getValue();
-  try {
-    const parsed = JSON.parse(text);
-    const formatted = JSON.stringify(parsed, null, 2);
-    editor.setValue(formatted);
-    clearError();
-  } catch (e) {
-    setError((e as Error).message);
+  const result = parseJson(text);
+  if (!result.ok) {
+    clearGraph();
+    setError(result.error);
+    return;
   }
+
+  const formatted = JSON.stringify(result.value, null, 2);
+  editor.setValue(formatted);
+  clearError();
 }
 
 // ===== Init =====
@@ -199,7 +218,7 @@ function init(): void {
   document.getElementById('btn-open')?.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => {
     const file = fileInput.files?.[0];
-    if (file) openFile(file);
+    if (file) void openFile(file);
     fileInput.value = '';
   });
 
@@ -255,6 +274,7 @@ function init(): void {
     }
     if (e.key === 'Escape') {
       searchInput.value = '';
+      searchQuery = '';
       searchMatches = [];
       searchIndex = 0;
       redraw();
