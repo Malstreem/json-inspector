@@ -81,30 +81,32 @@ function isPrimitive(v: unknown): boolean {
   return v === null || typeof v !== 'object';
 }
 
-let _nodeCount = 0;
+interface BuildContext {
+  nodeCount: number;
+}
 
 /**
  * Build child nodes from a value.
  * Returns an array of GraphNodes for object/array children.
  */
-function kidsOf(value: unknown, depth: number): GraphNode[] {
+function kidsOf(value: unknown, depth: number, context: BuildContext): GraphNode[] {
   if (Array.isArray(value)) {
     return value.map((item) => {
       if (isPrimitive(item)) {
-        return makePillNode(item, depth);
+        return makePillNode(item, depth, context);
       }
-      return makeObjectNode(item, depth);
+      return makeObjectNode(item, depth, context);
     });
   }
   if (value !== null && typeof value === 'object') {
-    return [makeObjectNode(value as Record<string, unknown>, depth)];
+    return [makeObjectNode(value as Record<string, unknown>, depth, context)];
   }
   return [];
 }
 
 /** Create a pill node for a primitive array item */
-function makePillNode(value: unknown, depth: number): GraphNode {
-  _nodeCount++;
+function makePillNode(value: unknown, depth: number, context: BuildContext): GraphNode {
+  context.nodeCount++;
   const t = formatPrimitive(value);
   return {
     rows: [{ k: '', t }],
@@ -117,8 +119,8 @@ function makePillNode(value: unknown, depth: number): GraphNode {
 }
 
 /** Create an object/array card node */
-function makeObjectNode(obj: unknown, depth: number): GraphNode {
-  _nodeCount++;
+function makeObjectNode(obj: unknown, depth: number, context: BuildContext): GraphNode {
+  context.nodeCount++;
   const rows: Row[] = [];
   let maxTextW = 0;
 
@@ -132,7 +134,7 @@ function makeObjectNode(obj: unknown, depth: number): GraphNode {
         maxTextW = Math.max(maxTextW, textWidth(k + t));
       } else {
         const t = summarize(item);
-        const kids = kidsOf(item, depth + 1);
+        const kids = kidsOf(item, depth + 1, context);
         rows.push({ k, t, kids, open: true });
         maxTextW = Math.max(maxTextW, textWidth(k + t));
       }
@@ -147,7 +149,7 @@ function makeObjectNode(obj: unknown, depth: number): GraphNode {
         maxTextW = Math.max(maxTextW, textWidth(k + t));
       } else {
         const t = summarize(val);
-        const kids = kidsOf(val, depth + 1);
+        const kids = kidsOf(val, depth + 1, context);
         rows.push({ k, t, kids, open: true });
         maxTextW = Math.max(maxTextW, textWidth(k + t));
       }
@@ -171,16 +173,16 @@ function makeObjectNode(obj: unknown, depth: number): GraphNode {
  * Returns the root node and total node count.
  */
 export function buildGraph(value: unknown): BuildResult {
-  _nodeCount = 0;
+  const context: BuildContext = { nodeCount: 0 };
   let root: GraphNode;
 
   if (isPrimitive(value)) {
-    root = makePillNode(value, 0);
+    root = makePillNode(value, 0, context);
   } else {
-    root = makeObjectNode(value, 0);
+    root = makeObjectNode(value, 0, context);
   }
 
-  return { root, nodeCount: _nodeCount };
+  return { root, nodeCount: context.nodeCount };
 }
 
 /**

@@ -226,22 +226,3 @@ export class GraphInteractions {
     this.svg.removeEventListener('touchend', this.onTouchEnd);
   }
 }
-
-/**
- * Search nodes for text matches.
- * Returns indices into the flat row array that match.
- */
-export function searchNodes(flatRows: FlatRow[], query: string): number[] {
-  if (!query.trim()) return [];
-  const q = query.toLowerCase();
-  const matches: number[] = [];
-
-  flatRows.forEach((fr, idx) => {
-    const text = (fr.row.k + fr.row.t).toLowerCase();
-    if (text.includes(q)) {
-      matches.push(idx);
-    }
-  });
-
-  return matches;
-}

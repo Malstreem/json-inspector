@@ -28,6 +28,16 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
 The graph is cleared when the editor contains invalid JSON, so it never appears
 to represent data that failed to parse.
 
+## Source structure
+
+- `src/app/` coordinates document, search, and graph state.
+- `src/json/` contains JSON parsing independent of the UI.
+- `src/graph/` contains graph data, layout, search, SVG rendering, and interactions.
+- `src/editor/` adapts CodeMirror to the application.
+- `src/files/` contains browser file-reading and SVG-download operations.
+- `src/ui/` contains reusable interface utilities such as the status bar and pane resizer.
+- `src/main.ts` initializes the app and connects UI events to the controller.
+
 ## Checks
 
 ```sh

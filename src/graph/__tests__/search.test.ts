@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildGraph, collapseAll, flattenRows } from '../model';
-import { searchNodes } from '../interactions';
+import { searchNodes } from '../search';
 
-describe('searchNodes', () => {
+describe('graph search', () => {
   it('finds case-insensitive matches in visible keys and values', () => {
     const { root } = buildGraph({ UserName: 'Arman', count: 2 });
     const rows = flattenRows(root);

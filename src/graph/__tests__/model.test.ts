@@ -70,6 +70,14 @@ describe('buildGraph', () => {
     const result = buildGraph({ a: { b: { c: { d: 'deep' } } } });
     expect(result.nodeCount).toBe(4);
   });
+
+  it('keeps build counts independent across graph constructions', () => {
+    const first = buildGraph({ child: { value: 1 } });
+    const second = buildGraph({ value: 1 });
+
+    expect(first.nodeCount).toBe(2);
+    expect(second.nodeCount).toBe(1);
+  });
 });
 
 describe('flattenRows', () => {

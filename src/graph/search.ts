@@ -1,0 +1,14 @@
+import type { FlatRow } from './model';
+
+/**
+ * Search visible graph rows and return their flat row indices.
+ */
+export function searchNodes(flatRows: FlatRow[], query: string): number[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return [];
+
+  return flatRows.flatMap((flatRow, index) => {
+    const text = `${flatRow.row.k}${flatRow.row.t}`.toLowerCase();
+    return text.includes(normalizedQuery) ? [index] : [];
+  });
+}
