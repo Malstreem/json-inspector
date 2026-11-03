@@ -129,6 +129,25 @@ describe('flattenRows', () => {
     const flat = flattenRows(root);
     expect(flat).toHaveLength(1);
   });
+
+  it('retains original values and JSON paths for each visible row', () => {
+    const source = {
+      users: [{ name: 'Ada' }],
+      'display.name': true,
+      flags: [true, false],
+    };
+    const { root } = buildGraph(source);
+    const flat = flattenRows(root);
+    const nameRow = flat.find(({ row }) => row.key === 'name');
+    const specialKeyRow = flat.find(({ row }) => row.key === 'display.name');
+    const firstFlagRow = flat.find(({ row }) => row.key === null && row.sourceValue === true);
+
+    expect(nameRow?.row.sourceValue).toBe('Ada');
+    expect(nameRow?.path).toEqual(['users', 0, 'name']);
+    expect(specialKeyRow?.path).toEqual(['display.name']);
+    expect(firstFlagRow?.path).toEqual(['flags', 0]);
+  });
+
 });
 
 describe('toggleRow', () => {

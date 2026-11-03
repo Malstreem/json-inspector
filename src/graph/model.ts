@@ -6,16 +6,22 @@
 /** A single row inside a graph card (node) */
 export interface Row {
   key: string | null;
+  sourceValue: unknown;
   /** Display value or a summary such as "[3 items]". */
   value: string;
+  pathSegment?: string | number;
   children?: GraphNode[];
   isExpanded?: boolean;
 }
+
+export type JsonPathSegment = string | number;
+export type JsonPath = readonly JsonPathSegment[];
 
 /** A node in the graph - represents an object, array, or primitive pill */
 export interface GraphNode {
   /** Rows displayed inside this card */
   rows: Row[];
+  path: JsonPath;
   /** Whether this is a primitive pill node (small, no card border) */
   isPill: boolean;
   /** Layout coordinates, assigned by the layout pass. */
@@ -92,17 +98,22 @@ interface BuildContext {
  * Build child nodes for a nested object or array value.
  * Returns an array of GraphNodes for object/array children.
  */
-function createChildren(value: unknown, depth: number, context: BuildContext): GraphNode[] {
+function createChildren(
+  value: unknown,
+  depth: number,
+  context: BuildContext,
+  path: JsonPath
+): GraphNode[] {
   if (Array.isArray(value)) {
-    return value.map((item) => {
-      if (isPrimitive(item)) {
-        return createPillNode(item, depth, context);
-      }
-      return createObjectNode(item, depth, context);
+    return value.map((item, index) => {
+      const childPath = [...path, index];
+      return isPrimitive(item)
+        ? createPillNode(item, depth, context, childPath)
+        : createObjectNode(item, depth, context, childPath);
     });
   }
   if (value !== null && typeof value === 'object') {
-    return [createObjectNode(value as Record<string, unknown>, depth, context)];
+    return [createObjectNode(value as Record<string, unknown>, depth, context, path)];
   }
   return [];
 }
@@ -114,12 +125,18 @@ function assertSupportedDepth(depth: number): void {
   }
 }
 
-function createPillNode(value: unknown, depth: number, context: BuildContext): GraphNode {
+function createPillNode(
+  value: unknown,
+  depth: number,
+  context: BuildContext,
+  path: JsonPath
+): GraphNode {
   assertSupportedDepth(depth);
   context.nodeCount++;
   const formattedValue = formatPrimitive(value);
   return {
-    rows: [{ key: null, value: formattedValue }],
+    rows: [{ key: null, sourceValue: value, value: formattedValue }],
+    path,
     isPill: true,
     x: 0, y: 0,
     width: textWidth(formattedValue) + PAD_X * 2,
@@ -129,7 +146,12 @@ function createPillNode(value: unknown, depth: number, context: BuildContext): G
 }
 
 /** Create an object/array card node */
-function createObjectNode(objectValue: unknown, depth: number, context: BuildContext): GraphNode {
+function createObjectNode(
+  objectValue: unknown,
+  depth: number,
+  context: BuildContext,
+  path: JsonPath
+): GraphNode {
   assertSupportedDepth(depth);
   context.nodeCount++;
   const rows: Row[] = [];
@@ -141,12 +163,12 @@ function createObjectNode(objectValue: unknown, depth: number, context: BuildCon
       const key = String(i);
       if (isPrimitive(item)) {
         const value = formatPrimitive(item);
-        rows.push({ key, value });
+        rows.push({ key, pathSegment: i, sourceValue: item, value });
         maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       } else {
         const value = summarize(item);
-        const children = createChildren(item, depth + 1, context);
-        rows.push({ key, value, children, isExpanded: true });
+        const children = createChildren(item, depth + 1, context, [...path, i]);
+        rows.push({ key, pathSegment: i, sourceValue: item, value, children, isExpanded: true });
         maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       }
     });
@@ -155,12 +177,12 @@ function createObjectNode(objectValue: unknown, depth: number, context: BuildCon
     for (const [key, childValue] of Object.entries(objectValue as Record<string, unknown>)) {
       if (isPrimitive(childValue)) {
         const value = formatPrimitive(childValue);
-        rows.push({ key, value });
+        rows.push({ key, pathSegment: key, sourceValue: childValue, value });
         maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       } else {
         const value = summarize(childValue);
-        const children = createChildren(childValue, depth + 1, context);
-        rows.push({ key, value, children, isExpanded: true });
+        const children = createChildren(childValue, depth + 1, context, [...path, key]);
+        rows.push({ key, pathSegment: key, sourceValue: childValue, value, children, isExpanded: true });
         maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       }
     }
@@ -171,6 +193,7 @@ function createObjectNode(objectValue: unknown, depth: number, context: BuildCon
 
   return {
     rows,
+    path,
     isPill: false,
     x: 0, y: 0,
     width,
@@ -188,9 +211,9 @@ export function buildGraph(value: unknown): BuildResult {
   let root: GraphNode;
 
   if (isPrimitive(value)) {
-    root = createPillNode(value, 0, context);
+    root = createPillNode(value, 0, context, []);
   } else {
-    root = createObjectNode(value, 0, context);
+    root = createObjectNode(value, 0, context, []);
   }
 
   return { root, nodeCount: context.nodeCount };
@@ -204,14 +227,18 @@ export interface FlatRow {
   row: Row;
   node: GraphNode;
   rowIndex: number; // index within the node
+  path: JsonPath;
 }
 
 export function flattenRows(root: GraphNode): FlatRow[] {
   const result: FlatRow[] = [];
 
-  function walk(node: GraphNode) {
+  function walk(node: GraphNode): void {
     node.rows.forEach((row, i) => {
-      result.push({ row, node, rowIndex: i });
+      const path = row.pathSegment === undefined
+        ? node.path
+        : [...node.path, row.pathSegment];
+      result.push({ row, node, rowIndex: i, path });
       if (row.children && row.isExpanded) {
         row.children.forEach(walk);
       }
