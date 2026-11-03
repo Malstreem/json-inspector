@@ -27,6 +27,8 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
 
 - Edit JSON with syntax highlighting, formatting, and inline parse diagnostics.
 - Explore nested objects and arrays in a graph; expand or collapse branches.
+- Expand and collapse graph branches with Enter or Space; nesting beyond 100
+  graph levels is reported as an error.
 - Search visible graph rows, pan and zoom, and fit the graph to the viewport.
 - Open `.json` and `.geojson` files.
 - Export the graph as an SVG image.
@@ -40,7 +42,7 @@ to represent data that failed to parse.
 - `src/json/` contains JSON parsing independent of the UI.
 - `src/graph/` contains graph data, layout, search, SVG rendering, and interactions.
 - `src/editor/` adapts CodeMirror to the application.
-- `src/files/` contains browser file-reading and SVG-download operations.
+- `src/files/` contains SVG export operations.
 - `src/ui/` contains reusable interface utilities such as the status bar and pane resizer.
 - `src/main.ts` initializes the app and connects UI events to the controller.
 
