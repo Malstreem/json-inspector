@@ -1,11 +1,13 @@
 /**
  * Pane resizer: draggable divider between editor and graph panes.
  */
-export function initPaneResizer(): void {
+export function initPaneResizer(): () => void {
   const resizer = document.querySelector<HTMLElement>('.pane-resizer');
   const editorPane = document.querySelector<HTMLElement>('.editor-pane');
-  if (!resizer || !editorPane) return;
+  if (!resizer || !editorPane) return () => {};
 
+  const eventController = new AbortController();
+  const { signal } = eventController;
   let isResizing = false;
   let startX = 0;
   let startWidth = 0;
@@ -18,14 +20,14 @@ export function initPaneResizer(): void {
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     e.preventDefault();
-  });
+  }, { signal });
 
   document.addEventListener('mousemove', (e: MouseEvent) => {
     if (!isResizing) return;
     const dx = e.clientX - startX;
     const newWidth = Math.max(250, Math.min(startWidth + dx, window.innerWidth - 300));
     editorPane.style.width = `${newWidth}px`;
-  });
+  }, { signal });
 
   document.addEventListener('mouseup', () => {
     if (!isResizing) return;
@@ -33,7 +35,7 @@ export function initPaneResizer(): void {
     resizer.classList.remove('dragging');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-  });
+  }, { signal });
 
   // Keyboard support
   resizer.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -45,5 +47,13 @@ export function initPaneResizer(): void {
       editorPane.style.width = `${Math.min(editorPane.offsetWidth + step, window.innerWidth - 300)}px`;
       e.preventDefault();
     }
-  });
+  }, { signal });
+
+  return () => {
+    eventController.abort();
+    isResizing = false;
+    resizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  };
 }

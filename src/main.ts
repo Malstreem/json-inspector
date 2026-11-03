@@ -2,7 +2,6 @@ import './styles/index.css';
 import { InspectorController } from './app/inspector-controller';
 import { createEditor } from './editor/setup';
 import { downloadGraphSvg } from './files/download-svg';
-import { readJsonFile } from './files/read-json-file';
 import { GraphView } from './graph/view';
 import { clearError, initStatusBar, setError, setNodeCount, setParseTime } from './ui/status-bar';
 import { initPaneResizer } from './ui/pane-resizer';
@@ -16,13 +15,26 @@ function requireElement<T extends Element>(selector: string): T {
   return element;
 }
 
-function init(): void {
+function init(): () => void {
   initStatusBar();
-  initPaneResizer();
+  const destroyPaneResizer = initPaneResizer();
+  const appEvents = new AbortController();
+  const { signal } = appEvents;
 
   const editorContainer = requireElement<HTMLDivElement>('#editor-container');
   const fileInput = requireElement<HTMLInputElement>('#file-input');
   const searchInput = requireElement<HTMLInputElement>('#search-input');
+  const buttons = {
+    format: requireElement<HTMLButtonElement>('#btn-format'),
+    sample: requireElement<HTMLButtonElement>('#btn-sample'),
+    open: requireElement<HTMLButtonElement>('#btn-open'),
+    fit: requireElement<HTMLButtonElement>('#btn-fit'),
+    collapseAll: requireElement<HTMLButtonElement>('#btn-collapse-all'),
+    expandAll: requireElement<HTMLButtonElement>('#btn-expand-all'),
+    zoomIn: requireElement<HTMLButtonElement>('#btn-zoom-in'),
+    zoomOut: requireElement<HTMLButtonElement>('#btn-zoom-out'),
+    export: requireElement<HTMLButtonElement>('#btn-export'),
+  };
   const initialJson = getSampleJSON();
 
   let controller: InspectorController;
@@ -34,7 +46,10 @@ function init(): void {
   controller = new InspectorController(graphView, {
     onNodeCount: setNodeCount,
     onParseTime: setParseTime,
-    onError: (message) => message === null ? clearError() : setError(message),
+    onError: (message) => {
+      if (message === null) clearError();
+      else setError(message);
+    },
   });
 
   let documentTimer: ReturnType<typeof setTimeout> | null = null;
@@ -42,6 +57,7 @@ function init(): void {
     if (documentTimer) clearTimeout(documentTimer);
     documentTimer = setTimeout(() => updateDocument(source), 200);
   });
+  let isDestroyed = false;
 
   function updateDocument(source: string): void {
     if (documentTimer) clearTimeout(documentTimer);
@@ -52,50 +68,52 @@ function init(): void {
   controller.setDocument(initialJson);
   controller.fitToView();
 
-  document.getElementById('btn-format')?.addEventListener('click', () => {
+  buttons.format.addEventListener('click', () => {
     const formatted = controller.formatDocument(editor.getValue());
     if (formatted !== null) editor.setValue(formatted);
-  });
+  }, { signal });
 
-  document.getElementById('btn-sample')?.addEventListener('click', () => {
+  buttons.sample.addEventListener('click', () => {
     const sample = getSampleJSON();
     editor.setValue(sample);
     updateDocument(sample);
     controller.fitToView();
-  });
+  }, { signal });
 
-  document.getElementById('btn-open')?.addEventListener('click', () => fileInput.click());
+  buttons.open.addEventListener('click', () => fileInput.click(), { signal });
   fileInput.addEventListener('change', () => {
     const file = fileInput.files?.[0];
     if (file) {
-      void readJsonFile(file)
+      void file.text()
         .then((source) => {
+          if (isDestroyed) return;
           editor.setValue(source);
           updateDocument(source);
         })
         .catch((error: unknown) => {
+          if (isDestroyed) return;
           const detail = error instanceof Error ? `: ${error.message}` : '';
           setError(`Unable to read ${file.name}${detail}`);
         });
     }
     fileInput.value = '';
-  });
+  }, { signal });
 
-  document.getElementById('btn-fit')?.addEventListener('click', () => controller.fitToView());
-  document.getElementById('btn-collapse-all')?.addEventListener('click', () => controller.collapseAll());
-  document.getElementById('btn-expand-all')?.addEventListener('click', () => controller.expandAll());
-  document.getElementById('btn-zoom-in')?.addEventListener('click', () => graphView.zoomIn());
-  document.getElementById('btn-zoom-out')?.addEventListener('click', () => graphView.zoomOut());
-  document.getElementById('btn-export')?.addEventListener('click', () => {
+  buttons.fit.addEventListener('click', () => controller.fitToView(), { signal });
+  buttons.collapseAll.addEventListener('click', () => controller.collapseAll(), { signal });
+  buttons.expandAll.addEventListener('click', () => controller.expandAll(), { signal });
+  buttons.zoomIn.addEventListener('click', () => graphView.zoomIn(), { signal });
+  buttons.zoomOut.addEventListener('click', () => graphView.zoomOut(), { signal });
+  buttons.export.addEventListener('click', () => {
     const root = controller.getRoot();
     if (root) downloadGraphSvg(root);
-  });
+  }, { signal });
 
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
   searchInput.addEventListener('input', () => {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => controller.search(searchInput.value), 150);
-  });
+  }, { signal });
   searchInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -108,7 +126,7 @@ function init(): void {
       searchInput.value = '';
       controller.search('');
     }
-  });
+  }, { signal });
 
   document.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
@@ -128,11 +146,27 @@ function init(): void {
       const formatted = controller.formatDocument(editor.getValue());
       if (formatted !== null) editor.setValue(formatted);
     }
-  });
+  }, { signal });
+
+  return () => {
+    if (isDestroyed) return;
+    isDestroyed = true;
+    appEvents.abort();
+    if (documentTimer) clearTimeout(documentTimer);
+    if (searchTimer) clearTimeout(searchTimer);
+    editor.destroy();
+    graphView.destroy();
+    destroyPaneResizer();
+  };
+}
+
+function startApp(): void {
+  const destroy = init();
+  window.addEventListener('pagehide', destroy, { once: true });
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', startApp, { once: true });
 } else {
-  init();
+  startApp();
 }

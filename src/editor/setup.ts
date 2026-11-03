@@ -88,9 +88,9 @@ const baseTheme = EditorView.baseTheme({
 });
 
 export interface EditorInstance {
-  view: EditorView;
   getValue: () => string;
   setValue: (content: string) => void;
+  destroy: () => void;
 }
 
 /**
@@ -150,7 +150,6 @@ export function createEditor(
   });
 
   return {
-    view,
     getValue: () => view.state.doc.toString(),
     setValue: (content: string) => {
       view.dispatch({
@@ -161,5 +160,6 @@ export function createEditor(
         },
       });
     },
+    destroy: () => view.destroy(),
   };
 }
