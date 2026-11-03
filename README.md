@@ -3,6 +3,12 @@
 A browser-based tool for editing JSON and exploring its structure as an
 interactive graph.
 
+## Example
+
+The editor and interactive graph are shown side by side:
+
+![JSON Inspector showing the editor and graph side by side](./public/example-overview.png)
+
 ## Requirements
 
 - Node.js 20.19+ or 22.12+
