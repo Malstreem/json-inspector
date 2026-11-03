@@ -3,7 +3,14 @@ import { InspectorController } from './app/inspector-controller';
 import { createEditor } from './editor/setup';
 import { downloadGraphSvg } from './files/download-svg';
 import { GraphView } from './graph/view';
-import { clearError, initStatusBar, setError, setNodeCount, setParseTime } from './ui/status-bar';
+import {
+  initStatusBar,
+  setCopyStatus,
+  setParseTime,
+  setNodeCount,
+  clearError,
+  setError,
+} from './ui/status-bar';
 import { initPaneResizer } from './ui/pane-resizer';
 import { getSampleJSON } from './data/sample';
 
@@ -41,7 +48,8 @@ function init(): () => void {
   const graphView = new GraphView(
     requireElement<SVGSVGElement>('#graph-svg'),
     requireElement<SVGGElement>('#graph-group'),
-    () => controller.refresh()
+    () => controller.refresh(),
+    setCopyStatus
   );
   controller = new InspectorController(graphView, {
     onNodeCount: setNodeCount,

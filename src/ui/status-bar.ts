@@ -6,12 +6,14 @@ const els = {
   nodes: null as HTMLElement | null,
   parseTime: null as HTMLElement | null,
   error: null as HTMLElement | null,
+  copyStatus: null as HTMLElement | null,
 };
 
 export function initStatusBar(): void {
   els.nodes = document.getElementById('status-nodes');
   els.parseTime = document.getElementById('status-parse-time');
   els.error = document.getElementById('status-error');
+  els.copyStatus = document.getElementById('status-copy');
 }
 
 export function setNodeCount(count: number): void {
@@ -36,4 +38,10 @@ export function clearError(): void {
     els.error.textContent = '';
     els.error.title = '';
   }
+}
+
+export function setCopyStatus(message: string, isError: boolean): void {
+  if (!els.copyStatus) return;
+  els.copyStatus.textContent = message;
+  els.copyStatus.classList.toggle('is-error', isError);
 }

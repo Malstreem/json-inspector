@@ -354,6 +354,48 @@ input {
   outline: none;
 }
 
+.graph-context-menu {
+  position: fixed;
+  z-index: 20;
+  display: none;
+  width: 168px;
+  padding: 4px;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.graph-context-menu.is-open {
+  display: flex;
+}
+
+.graph-context-menu-item {
+  padding: 7px 10px;
+  border-radius: 4px;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.graph-context-menu-item:hover,
+.graph-context-menu-item:focus-visible {
+  background: var(--bg-tertiary);
+}
+
+.graph-context-menu-item:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+#status-copy {
+  color: var(--success);
+}
+
+#status-copy.is-error {
+  color: var(--error);
+}
+
 /* ===== Status Bar ===== */
 .status-bar {
   height: var(--statusbar-h);

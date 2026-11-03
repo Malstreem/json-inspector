@@ -30,6 +30,7 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
 - Expand and collapse graph branches with Enter or Space; nesting beyond 100
   graph levels is reported as an error.
 - Search visible graph rows, pan and zoom, and fit the graph to the viewport.
+- Right-click a graph item to copy its JSON value, path, or key.
 - Open `.json` and `.geojson` files.
 - Export the graph as an SVG image.
 

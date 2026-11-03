@@ -54,8 +54,10 @@ function renderNode(
     const isHighlighted = rowIndex !== undefined && highlightSet.has(rowIndex);
     const fill = isHighlighted ? HIGHLIGHT_COLOR : PILL_BG;
     const textFill = isHighlighted ? '#000' : TEXT_COLOR;
+    svg += `<g data-row-index="${rowIndex ?? -1}">`;
     svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="13" ry="13" fill="${fill}" stroke="${STROKE_COLOR}" stroke-width="1.5"/>`;
     svg += `<text x="${node.x + node.width / 2}" y="${node.y + node.height / 2 + 5}" text-anchor="middle" fill="${textFill}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(node.rows[0].value)}</text>`;
+    svg += '</g>';
     return svg;
   }
 
@@ -70,13 +72,15 @@ function renderNode(
     const rowFlatIndex = rowIndices.get(row) ?? -1;
     const isHighlighted = highlightSet.has(rowFlatIndex);
 
+    if (row.children) {
+      svg += `<g data-row-index="${rowFlatIndex}" role="button" tabindex="0" aria-expanded="${Boolean(row.isExpanded)}" aria-label="${esc(`${row.isExpanded ? 'Collapse' : 'Expand'} ${formatRowLabel(row)}`)}" style="cursor:pointer">`;
+    } else {
+      svg += `<g data-row-index="${rowFlatIndex}">`;
+    }
+
     // Highlight background
     if (isHighlighted) {
       svg += `<rect x="${node.x + 2}" y="${ry - 3}" width="${node.width - 4}" height="${ROW_H}" rx="4" fill="${HIGHLIGHT_COLOR}" opacity="0.3"/>`;
-    }
-
-    if (row.children) {
-      svg += `<g data-row-index="${rowFlatIndex}" role="button" tabindex="0" aria-expanded="${Boolean(row.isExpanded)}" aria-label="${esc(`${row.isExpanded ? 'Collapse' : 'Expand'} ${formatRowLabel(row)}`)}" style="cursor:pointer">`;
     }
 
     // Expand/collapse indicator for rows with children
@@ -96,16 +100,13 @@ function renderNode(
       svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(row.value)}</text>`;
     }
 
-    if (row.children) {
-      svg += '</g>';
-    }
-
     // Connection dot for rows with children
     if (row.children && row.isExpanded) {
       const dotX = node.x + node.width;
       const dotY = ry + ROW_H / 2 + 3;
       svg += `<circle cx="${dotX}" cy="${dotY}" r="4" fill="${STROKE_COLOR}"/>`;
     }
+    svg += '</g>';
   });
 
   return svg;
