@@ -4,6 +4,7 @@
  */
 import type { GraphNode, FlatRow, Row } from './model';
 import { flattenRows } from './model';
+import { formatJsonPath } from './copy';
 
 const ROW_H = 26;
 const PAD_X = 14;
@@ -44,7 +45,8 @@ function esc(s: string): string {
 function renderNode(
   node: GraphNode,
   rowIndices: Map<Row, number>,
-  highlightSet: Set<number>
+  highlightSet: Set<number>,
+  nodeIndex: number
 ): string {
   let svg = '';
 
@@ -54,15 +56,18 @@ function renderNode(
     const isHighlighted = rowIndex !== undefined && highlightSet.has(rowIndex);
     const fill = isHighlighted ? HIGHLIGHT_COLOR : PILL_BG;
     const textFill = isHighlighted ? '#000' : TEXT_COLOR;
+    svg += `<g data-node-index="${nodeIndex}" class="graph-node" role="group" tabindex="0" aria-keyshortcuts="Control+C Control+Alt+C Meta+C Meta+Alt+C" aria-label="JSON node at ${esc(formatJsonPath(node.path))}">`;
     svg += `<g data-row-index="${rowIndex ?? -1}">`;
     svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="13" ry="13" fill="${fill}" stroke="${STROKE_COLOR}" stroke-width="1.5"/>`;
     svg += `<text x="${node.x + node.width / 2}" y="${node.y + node.height / 2 + 5}" text-anchor="middle" fill="${textFill}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(node.rows[0].value)}</text>`;
+    svg += '</g>';
     svg += '</g>';
     return svg;
   }
 
   // Card node: rounded rect with rows
   const fillColor = DEPTH_COLORS[node.depth % DEPTH_COLORS.length];
+  svg += `<g data-node-index="${nodeIndex}" class="graph-node" role="group" tabindex="0" aria-keyshortcuts="Control+C Control+Alt+C Meta+C Meta+Alt+C" aria-label="JSON node at ${esc(formatJsonPath(node.path))}">`;
   svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="${BORDER_R}" ry="${BORDER_R}" fill="${fillColor}" stroke="${STROKE_COLOR}" stroke-width="${STROKE_W}"/>`;
 
   // Render each row
@@ -109,6 +114,7 @@ function renderNode(
     svg += '</g>';
   });
 
+  svg += '</g>';
   return svg;
 }
 
@@ -144,14 +150,17 @@ export function renderGraph(
   root: GraphNode,
   highlightIndices: Set<number> = new Set(),
   flatRows: FlatRow[] = flattenRows(root)
-): { svg: string; flatRows: FlatRow[] } {
+): { svg: string; flatRows: FlatRow[]; nodes: GraphNode[] } {
   const rowIndices = new Map(flatRows.map(({ row }, index) => [row, index]));
   let edgesSvg = '';
   let nodesSvg = '';
+  const nodes: GraphNode[] = [];
 
   // Render function that walks the tree
   function walkRender(node: GraphNode) {
-    nodesSvg += renderNode(node, rowIndices, highlightIndices);
+    const nodeIndex = nodes.length;
+    nodes.push(node);
+    nodesSvg += renderNode(node, rowIndices, highlightIndices, nodeIndex);
 
     // Render edges and recurse into children
     node.rows.forEach((row, ri) => {
@@ -169,6 +178,7 @@ export function renderGraph(
   return {
     svg: edgesSvg + nodesSvg, // edges behind nodes
     flatRows,
+    nodes,
   };
 }
 

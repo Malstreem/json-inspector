@@ -148,6 +148,16 @@ describe('flattenRows', () => {
     expect(firstFlagRow?.path).toEqual(['flags', 0]);
   });
 
+  it('retains the original value and JSON path for graph nodes', () => {
+    const source = { users: [{ name: 'Ada' }] };
+    const { root } = buildGraph(source);
+    const userNode = root.rows[0].children?.[0];
+
+    expect(root.sourceValue).toBe(source);
+    expect(root.path).toEqual([]);
+    expect(userNode?.sourceValue).toBe(source.users[0]);
+    expect(userNode?.path).toEqual(['users', 0]);
+  });
 });
 
 describe('toggleRow', () => {

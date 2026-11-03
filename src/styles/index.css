@@ -354,6 +354,18 @@ input {
   outline: none;
 }
 
+#graph-group .graph-node {
+  cursor: pointer;
+}
+
+#graph-group .graph-node.is-selected > rect,
+#graph-group .graph-node.is-selected > g > rect,
+#graph-group .graph-node:focus-visible > rect,
+#graph-group .graph-node:focus-visible > g > rect {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
 .graph-context-menu {
   position: fixed;
   z-index: 20;

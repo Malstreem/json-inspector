@@ -22,16 +22,18 @@ export class GraphView {
 
   render(root: GraphNode, highlightIndices: Set<number>, flatRows: FlatRow[]): void {
     layoutNode(root, 0, 0, 0);
-    const { svg } = renderGraph(root, highlightIndices, flatRows);
+    const { svg, nodes } = renderGraph(root, highlightIndices, flatRows);
     this.group.innerHTML = svg;
     this.interactions.setFlatRows(flatRows);
     this.copyControls.setFlatRows(flatRows);
+    this.copyControls.setNodes(nodes);
   }
 
   clear(): void {
     this.group.innerHTML = '';
     this.interactions.setFlatRows([]);
     this.copyControls.setFlatRows([]);
+    this.copyControls.setNodes([]);
   }
 
   fitToView(root: GraphNode): void {

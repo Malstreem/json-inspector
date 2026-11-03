@@ -21,6 +21,7 @@ export type JsonPath = readonly JsonPathSegment[];
 export interface GraphNode {
   /** Rows displayed inside this card */
   rows: Row[];
+  sourceValue: unknown;
   path: JsonPath;
   /** Whether this is a primitive pill node (small, no card border) */
   isPill: boolean;
@@ -136,6 +137,7 @@ function createPillNode(
   const formattedValue = formatPrimitive(value);
   return {
     rows: [{ key: null, sourceValue: value, value: formattedValue }],
+    sourceValue: value,
     path,
     isPill: true,
     x: 0, y: 0,
@@ -193,6 +195,7 @@ function createObjectNode(
 
   return {
     rows,
+    sourceValue: objectValue,
     path,
     isPill: false,
     x: 0, y: 0,

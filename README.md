@@ -31,6 +31,8 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
   graph levels is reported as an error.
 - Search visible graph rows, pan and zoom, and fit the graph to the viewport.
 - Right-click a graph item to copy its JSON value, path, or key.
+- Select a graph block, then press `Ctrl/Cmd+C` to copy its JSON or
+  `Ctrl/Cmd+Alt+C` to copy its path.
 - Open `.json` and `.geojson` files.
 - Export the graph as an SVG image.
 

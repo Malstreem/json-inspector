@@ -38,6 +38,18 @@ describe('renderGraph', () => {
     expect(svg).toContain('role="button" tabindex="0" aria-expanded="true"');
   });
 
+  it('renders focusable graph nodes with copy shortcut guidance', () => {
+    const { root } = buildGraph({ branch: { leaf: true } });
+    layoutNode(root, 0, 0);
+
+    const { svg, nodes } = renderGraph(root);
+
+    expect(nodes).toHaveLength(2);
+    expect(svg).toContain('data-node-index="0" class="graph-node" role="group" tabindex="0"');
+    expect(svg).toContain('aria-keyshortcuts="Control+C Control+Alt+C Meta+C Meta+Alt+C"');
+    expect(svg).toContain('aria-label="JSON node at $.branch"');
+  });
+
   it('matches highlights against the same flat row traversal', () => {
     const { root } = buildGraph({ branch: { value: 'match' }, sibling: 1 });
     layoutNode(root, 0, 0);

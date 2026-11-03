@@ -2,7 +2,7 @@ import {
   serializeJsonValue,
   formatJsonPath,
 } from './copy';
-import type { FlatRow } from './model';
+import type { GraphNode, FlatRow } from './model';
 
 type CopyAction = 'value' | 'path' | 'key';
 
@@ -12,6 +12,8 @@ export class GraphCopyControls {
   private readonly eventController = new AbortController();
   private readonly menu: HTMLDivElement;
   private flatRows: FlatRow[] = [];
+  private nodes: GraphNode[] = [];
+  private selectedNode: GraphNode | null = null;
   private selectedRowIndex: number | null = null;
   private restoreRowFocusOnClose = false;
 
@@ -31,6 +33,14 @@ export class GraphCopyControls {
     this.closeMenu(false);
   }
 
+  setNodes(nodes: GraphNode[]): void {
+    this.nodes = nodes;
+    if (this.selectedNode && !nodes.includes(this.selectedNode)) {
+      this.selectedNode = null;
+    }
+    this.applySelectedNode();
+  }
+
   destroy(): void {
     this.eventController.abort();
     this.menu.remove();
@@ -39,6 +49,8 @@ export class GraphCopyControls {
   private bindEvents(): void {
     const { signal } = this.eventController;
     this.svg.addEventListener('contextmenu', this.onContextMenu, { signal });
+    this.svg.addEventListener('click', this.onSvgClick, { capture: true, signal });
+    this.svg.addEventListener('focusin', this.onSvgFocusIn, { signal });
     this.svg.addEventListener('keydown', this.onSvgKeyDown, { signal });
     document.addEventListener('click', this.onDocumentClick, { signal });
     document.addEventListener('keydown', this.onDocumentKeyDown, { signal });
@@ -117,6 +129,68 @@ export class GraphCopyControls {
     this.showMenu(rowElement, rect.left, rect.bottom, true);
   };
 
+  private onSvgClick = (event: MouseEvent): void => {
+    if (!(event.target instanceof Element)) return;
+    const nodeElement = event.target.closest<SVGGElement>('[data-node-index]');
+    if (!nodeElement) {
+      this.selectedNode = null;
+      this.applySelectedNode();
+      return;
+    }
+    this.selectNode(nodeElement, true);
+  };
+
+  private onSvgFocusIn = (event: FocusEvent): void => {
+    if (!(event.target instanceof Element)) return;
+    const nodeElement = event.target.closest<SVGGElement>('[data-node-index]');
+    if (nodeElement) this.selectNode(nodeElement);
+  };
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return target.isContentEditable ||
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      Boolean(target.closest('.graph-context-menu')) ||
+      Boolean(target.closest('.cm-editor'));
+  }
+
+  private selectNode(element: SVGGElement, focus = false): void {
+    const index = Number(element.dataset.nodeIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= this.nodes.length) return;
+
+    const node = this.nodes[index];
+    if (this.selectedNode !== node) {
+      this.selectedNode = node;
+      this.onStatus('Node selected. Ctrl/Cmd+C copies JSON; Ctrl/Cmd+Alt+C copies its path.', false);
+    }
+    this.applySelectedNode();
+    if (focus) element.focus();
+  }
+
+  private applySelectedNode(): void {
+    const selectedIndex = this.selectedNode ? this.nodes.indexOf(this.selectedNode) : -1;
+    this.svg.querySelectorAll<SVGGElement>('[data-node-index]').forEach((element) => {
+      element.classList.toggle('is-selected', Number(element.dataset.nodeIndex) === selectedIndex);
+    });
+  }
+
+  private copySelectedNode(action: 'value' | 'path'): void {
+    if (!this.selectedNode) return;
+    try {
+      const text = action === 'value'
+        ? serializeJsonValue(this.selectedNode.sourceValue)
+        : formatJsonPath(this.selectedNode.path);
+      this.writeClipboard(text, action);
+    } catch (error) {
+      this.onStatus(
+        error instanceof Error ? error.message : 'Unable to prepare item for copying.',
+        true
+      );
+    }
+  }
+
   private onMenuClick = (event: MouseEvent): void => {
     if (!(event.target instanceof Element) || this.selectedRowIndex === null) return;
     const button = event.target.closest<HTMLButtonElement>('[data-copy-action]');
@@ -193,6 +267,17 @@ export class GraphCopyControls {
     if (event.key === 'Escape' && this.menu.classList.contains('is-open')) {
       this.closeMenu(true);
     }
+
+    if ((!event.ctrlKey && !event.metaKey) ||
+      event.key.toLowerCase() !== 'c' ||
+      this.isEditableTarget(event.target) ||
+      Boolean(window.getSelection()?.toString()) ||
+      !this.selectedNode) {
+      return;
+    }
+
+    event.preventDefault();
+    this.copySelectedNode(event.altKey ? 'path' : 'value');
   };
 
   private closeMenu(restoreFocus: boolean): void {

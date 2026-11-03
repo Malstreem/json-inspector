@@ -63,10 +63,10 @@ export class GraphInteractions {
   }
 
   private onMouseDown = (e: MouseEvent): void => {
-    // Let expandable rows handle their own click without starting a pan.
+    // Let graph items handle their own clicks without starting a pan.
     if (!(e.target instanceof Element)) return;
     const target = e.target;
-    if (target.closest('[data-row-index]')) return;
+    if (target.closest('[data-row-index], [data-node-index]')) return;
 
     this.isPanning = true;
     this.panStart = { x: e.clientX - this.state.panX, y: e.clientY - this.state.panY };
