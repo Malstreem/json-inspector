@@ -1,9 +1,9 @@
 import { parseJson } from '../json/parse';
-import { buildGraph, collapseAll, expandAll, flattenRows, type FlatRow, type GraphNode } from '../graph/model';
+import { buildGraph, collapseAll, expandAll, flattenRows, type FlatRow, GraphDepthError, type GraphNode } from '../graph/model';
 import { searchNodes } from '../graph/search';
 
 export interface GraphViewPort {
-  render(root: GraphNode, highlightIndices: Set<number>): void;
+  render(root: GraphNode, highlightIndices: Set<number>, flatRows: FlatRow[]): void;
   clear(): void;
   fitToView(root: GraphNode): void;
   centerOnNode(node: GraphNode): void;
@@ -49,7 +49,17 @@ export class InspectorController {
       return;
     }
 
-    const { root, nodeCount } = buildGraph(result.value);
+    let graph: ReturnType<typeof buildGraph>;
+    try {
+      graph = buildGraph(result.value);
+    } catch (error) {
+      if (!(error instanceof GraphDepthError)) throw error;
+      this.clearGraph();
+      this.status.onError(error.message);
+      return;
+    }
+
+    const { root, nodeCount } = graph;
     this.root = root;
     this.status.onError(null);
     this.status.onNodeCount(nodeCount);
@@ -117,7 +127,7 @@ export class InspectorController {
     this.matchIndex = this.matches.length
       ? this.matchIndex % this.matches.length
       : 0;
-    this.graphView.render(this.root, new Set(this.matches));
+    this.graphView.render(this.root, new Set(this.matches), this.flatRows);
   }
 
   getRoot(): GraphNode | null {
@@ -130,6 +140,7 @@ export class InspectorController {
     this.matches = [];
     this.matchIndex = 0;
     this.status.onNodeCount(0);
+    this.status.onParseTime(0);
     this.graphView.clear();
   }
 

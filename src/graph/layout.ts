@@ -2,7 +2,7 @@
  * Tidy-tree layout algorithm for the JSON graph.
  * Positions nodes left-to-right with parent → child connections.
  */
-import type { GraphNode, Row } from './model';
+import type { GraphNode } from './model';
 
 const GAP_X = 60;  // horizontal gap between parent and children
 const GAP_Y = 16;  // vertical gap between sibling nodes
@@ -17,29 +17,29 @@ const GAP_Y = 16;  // vertical gap between sibling nodes
  */
 export function layoutNode(node: GraphNode, x: number, y0: number, depth: number = 0): number {
   node.x = x;
-  node.d = depth;
+  node.depth = depth;
 
   // Collect all visible child nodes from open rows
-  const allKids: { row: Row; rowIndex: number; kids: GraphNode[] }[] = [];
-  node.rows.forEach((row, ri) => {
-    if (row.kids && row.open) {
-      allKids.push({ row, rowIndex: ri, kids: row.kids });
+  const childGroups: GraphNode[][] = [];
+  node.rows.forEach((row) => {
+    if (row.children && row.isExpanded) {
+      childGroups.push(row.children);
     }
   });
 
-  if (allKids.length === 0) {
+  if (childGroups.length === 0) {
     // Leaf node: position at y0
     node.y = y0;
-    return node.h;
+    return node.height;
   }
 
   // Layout all children
-  const childX = x + node.w + GAP_X;
+  const childX = x + node.width + GAP_X;
   let cy = y0;
 
   const allChildNodes: GraphNode[] = [];
-  for (const group of allKids) {
-    for (const kid of group.kids) {
+  for (const group of childGroups) {
+    for (const kid of group) {
       const kidH = layoutNode(kid, childX, cy, depth + 1);
       allChildNodes.push(kid);
       cy += kidH + GAP_Y;
@@ -52,8 +52,8 @@ export function layoutNode(node: GraphNode, x: number, y0: number, depth: number
   // Center parent vertically among its children
   const firstChild = allChildNodes[0];
   const lastChild = allChildNodes[allChildNodes.length - 1];
-  const childMidY = (firstChild.y + lastChild.y + lastChild.h) / 2;
-  node.y = childMidY - node.h / 2;
+  const childMidY = (firstChild.y + lastChild.y + lastChild.height) / 2;
+  node.y = childMidY - node.height / 2;
 
   // Ensure parent doesn't go above y0
   if (node.y < y0) {
@@ -63,7 +63,7 @@ export function layoutNode(node: GraphNode, x: number, y0: number, depth: number
     shiftSubtree(allChildNodes, shift);
   }
 
-  return Math.max(node.h, childrenHeight + GAP_Y) + Math.max(0, node.y - y0);
+  return Math.max(node.height, childrenHeight + GAP_Y) + Math.max(0, node.y - y0);
 }
 
 /** Shift a set of nodes (and their descendants) vertically */
@@ -76,8 +76,8 @@ function shiftSubtree(nodes: GraphNode[], dy: number): void {
 function shiftNode(node: GraphNode, dy: number): void {
   node.y += dy;
   for (const row of node.rows) {
-    if (row.kids && row.open) {
-      for (const kid of row.kids) {
+    if (row.children && row.isExpanded) {
+      for (const kid of row.children) {
         shiftNode(kid, dy);
       }
     }
@@ -103,12 +103,12 @@ export function computeBounds(root: GraphNode): BoundingBox {
   function walk(node: GraphNode) {
     minX = Math.min(minX, node.x);
     minY = Math.min(minY, node.y);
-    maxX = Math.max(maxX, node.x + node.w);
-    maxY = Math.max(maxY, node.y + node.h);
+    maxX = Math.max(maxX, node.x + node.width);
+    maxY = Math.max(maxY, node.y + node.height);
 
     for (const row of node.rows) {
-      if (row.kids && row.open) {
-        row.kids.forEach(walk);
+      if (row.children && row.isExpanded) {
+        row.children.forEach(walk);
       }
     }
   }

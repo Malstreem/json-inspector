@@ -5,14 +5,11 @@
 
 /** A single row inside a graph card (node) */
 export interface Row {
-  /** Display key with colon, e.g. "name: " or "" for root/array items */
-  k: string;
-  /** Display value text or summary like "[3 items]" */
-  t: string;
-  /** Child nodes (only for object/array valued properties) */
-  kids?: GraphNode[];
-  /** Whether children are expanded (default true) */
-  open?: boolean;
+  key: string | null;
+  /** Display value or a summary such as "[3 items]". */
+  value: string;
+  children?: GraphNode[];
+  isExpanded?: boolean;
 }
 
 /** A node in the graph - represents an object, array, or primitive pill */
@@ -20,15 +17,13 @@ export interface GraphNode {
   /** Rows displayed inside this card */
   rows: Row[];
   /** Whether this is a primitive pill node (small, no card border) */
-  pill: boolean;
-  /** Layout coordinates (set by layout pass) */
+  isPill: boolean;
+  /** Layout coordinates, assigned by the layout pass. */
   x: number;
   y: number;
-  /** Computed width and height */
-  w: number;
-  h: number;
-  /** Depth in the tree (for coloring) */
-  d: number;
+  width: number;
+  height: number;
+  depth: number;
 }
 
 /** Result of building a graph from a JSON value */
@@ -44,10 +39,18 @@ const PAD_Y = 10;
 const CHAR_W = 7.9; // monospace char width estimate
 const MIN_NODE_W = 120;
 const MAX_TEXT_LEN = 60;
+export const MAX_GRAPH_DEPTH = 100;
+
+export class GraphDepthError extends Error {
+  constructor() {
+    super(`JSON nesting exceeds the supported graph depth of ${MAX_GRAPH_DEPTH}.`);
+    this.name = 'GraphDepthError';
+  }
+}
 
 /** Estimate text width for monospace font */
 function textWidth(s: string): number {
-  return Math.min(s.length, MAX_TEXT_LEN) * CHAR_W;
+  return s.length * CHAR_W;
 }
 
 /** Truncate text if too long */
@@ -86,85 +89,93 @@ interface BuildContext {
 }
 
 /**
- * Build child nodes from a value.
+ * Build child nodes for a nested object or array value.
  * Returns an array of GraphNodes for object/array children.
  */
-function kidsOf(value: unknown, depth: number, context: BuildContext): GraphNode[] {
+function createChildren(value: unknown, depth: number, context: BuildContext): GraphNode[] {
   if (Array.isArray(value)) {
     return value.map((item) => {
       if (isPrimitive(item)) {
-        return makePillNode(item, depth, context);
+        return createPillNode(item, depth, context);
       }
-      return makeObjectNode(item, depth, context);
+      return createObjectNode(item, depth, context);
     });
   }
   if (value !== null && typeof value === 'object') {
-    return [makeObjectNode(value as Record<string, unknown>, depth, context)];
+    return [createObjectNode(value as Record<string, unknown>, depth, context)];
   }
   return [];
 }
 
 /** Create a pill node for a primitive array item */
-function makePillNode(value: unknown, depth: number, context: BuildContext): GraphNode {
+function assertSupportedDepth(depth: number): void {
+  if (depth > MAX_GRAPH_DEPTH) {
+    throw new GraphDepthError();
+  }
+}
+
+function createPillNode(value: unknown, depth: number, context: BuildContext): GraphNode {
+  assertSupportedDepth(depth);
   context.nodeCount++;
-  const t = formatPrimitive(value);
+  const formattedValue = formatPrimitive(value);
   return {
-    rows: [{ k: '', t }],
-    pill: true,
+    rows: [{ key: null, value: formattedValue }],
+    isPill: true,
     x: 0, y: 0,
-    w: textWidth(t) + PAD_X * 2,
-    h: ROW_H + PAD_Y,
-    d: depth,
+    width: textWidth(formattedValue) + PAD_X * 2,
+    height: ROW_H + PAD_Y,
+    depth,
   };
 }
 
 /** Create an object/array card node */
-function makeObjectNode(obj: unknown, depth: number, context: BuildContext): GraphNode {
+function createObjectNode(objectValue: unknown, depth: number, context: BuildContext): GraphNode {
+  assertSupportedDepth(depth);
   context.nodeCount++;
   const rows: Row[] = [];
-  let maxTextW = 0;
+  let maxTextWidth = 0;
 
-  if (Array.isArray(obj)) {
+  if (Array.isArray(objectValue)) {
     // Array: each item is a row
-    obj.forEach((item, i) => {
-      const k = `${i}: `;
+    objectValue.forEach((item, i) => {
+      const key = String(i);
       if (isPrimitive(item)) {
-        const t = formatPrimitive(item);
-        rows.push({ k, t });
-        maxTextW = Math.max(maxTextW, textWidth(k + t));
+        const value = formatPrimitive(item);
+        rows.push({ key, value });
+        maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       } else {
-        const t = summarize(item);
-        const kids = kidsOf(item, depth + 1, context);
-        rows.push({ k, t, kids, open: true });
-        maxTextW = Math.max(maxTextW, textWidth(k + t));
+        const value = summarize(item);
+        const children = createChildren(item, depth + 1, context);
+        rows.push({ key, value, children, isExpanded: true });
+        maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       }
     });
-  } else if (obj !== null && typeof obj === 'object') {
+  } else if (objectValue !== null && typeof objectValue === 'object') {
     // Object: each key-value pair is a row
-    for (const [key, val] of Object.entries(obj as Record<string, unknown>)) {
-      const k = `${key}: `;
-      if (isPrimitive(val)) {
-        const t = formatPrimitive(val);
-        rows.push({ k, t });
-        maxTextW = Math.max(maxTextW, textWidth(k + t));
+    for (const [key, childValue] of Object.entries(objectValue as Record<string, unknown>)) {
+      if (isPrimitive(childValue)) {
+        const value = formatPrimitive(childValue);
+        rows.push({ key, value });
+        maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       } else {
-        const t = summarize(val);
-        const kids = kidsOf(val, depth + 1, context);
-        rows.push({ k, t, kids, open: true });
-        maxTextW = Math.max(maxTextW, textWidth(k + t));
+        const value = summarize(childValue);
+        const children = createChildren(childValue, depth + 1, context);
+        rows.push({ key, value, children, isExpanded: true });
+        maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       }
     }
   }
 
-  const w = Math.max(MIN_NODE_W, maxTextW + PAD_X * 2);
-  const h = rows.length * ROW_H + PAD_Y * 2;
+  const width = Math.max(MIN_NODE_W, maxTextWidth + PAD_X * 2);
+  const height = rows.length * ROW_H + PAD_Y * 2;
 
   return {
     rows,
-    pill: false,
+    isPill: false,
     x: 0, y: 0,
-    w, h,
-    d: depth,
+    width,
+    height,
+    depth,
   };
 }
 
@@ -177,9 +188,9 @@ export function buildGraph(value: unknown): BuildResult {
   let root: GraphNode;
 
   if (isPrimitive(value)) {
-    root = makePillNode(value, 0, context);
+    root = createPillNode(value, 0, context);
   } else {
-    root = makeObjectNode(value, 0, context);
+    root = createObjectNode(value, 0, context);
   }
 
   return { root, nodeCount: context.nodeCount };
@@ -201,8 +212,8 @@ export function flattenRows(root: GraphNode): FlatRow[] {
   function walk(node: GraphNode) {
     node.rows.forEach((row, i) => {
       result.push({ row, node, rowIndex: i });
-      if (row.kids && row.open) {
-        row.kids.forEach(walk);
+      if (row.children && row.isExpanded) {
+        row.children.forEach(walk);
       }
     });
   }
@@ -215,8 +226,8 @@ export function flattenRows(root: GraphNode): FlatRow[] {
  * Toggle the open/closed state of a row's children.
  */
 export function toggleRow(row: Row): boolean {
-  if (!row.kids) return false;
-  row.open = !row.open;
+  if (!row.children) return false;
+  row.isExpanded = !row.isExpanded;
   return true;
 }
 
@@ -226,9 +237,9 @@ export function toggleRow(row: Row): boolean {
 export function collapseAll(root: GraphNode): void {
   function walk(node: GraphNode) {
     for (const row of node.rows) {
-      if (row.kids) {
-        row.open = false;
-        row.kids.forEach(walk);
+      if (row.children) {
+        row.isExpanded = false;
+        row.children.forEach(walk);
       }
     }
   }
@@ -241,9 +252,9 @@ export function collapseAll(root: GraphNode): void {
 export function expandAll(root: GraphNode): void {
   function walk(node: GraphNode) {
     for (const row of node.rows) {
-      if (row.kids) {
-        row.open = true;
-        row.kids.forEach(walk);
+      if (row.children) {
+        row.isExpanded = true;
+        row.children.forEach(walk);
       }
     }
   }

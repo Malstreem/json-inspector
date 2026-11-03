@@ -13,8 +13,8 @@ describe('layoutNode', () => {
   it('positions children to the right of parent', () => {
     const { root } = buildGraph({ child: { inner: 1 } });
     layoutNode(root, 0, 0);
-    const childNode = root.rows[0].kids![0];
-    expect(childNode.x).toBeGreaterThan(root.x + root.w);
+    const childNode = root.rows[0].children![0];
+    expect(childNode.x).toBeGreaterThan(root.x + root.width);
   });
 
   it('returns positive height', () => {
@@ -29,10 +29,10 @@ describe('layoutNode', () => {
       c: { d: 2 },
     });
     layoutNode(root, 0, 0);
-    const child1 = root.rows[0].kids![0];
-    const child2 = root.rows[1].kids![0];
+    const child1 = root.rows[0].children![0];
+    const child2 = root.rows[1].children![0];
     // Children should not overlap vertically
-    const c1Bottom = child1.y + child1.h;
+    const c1Bottom = child1.y + child1.height;
     const c2Top = child2.y;
     expect(c2Top).toBeGreaterThanOrEqual(c1Bottom);
   });

@@ -349,6 +349,11 @@ input {
   display: block;
 }
 
+#graph-group [role="button"]:focus-visible {
+  filter: drop-shadow(0 0 3px var(--accent));
+  outline: none;
+}
+
 /* ===== Status Bar ===== */
 .status-bar {
   height: var(--statusbar-h);

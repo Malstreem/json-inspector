@@ -8,7 +8,7 @@ export function searchNodes(flatRows: FlatRow[], query: string): number[] {
   if (!normalizedQuery) return [];
 
   return flatRows.flatMap((flatRow, index) => {
-    const text = `${flatRow.row.k}${flatRow.row.t}`.toLowerCase();
+    const text = `${flatRow.row.key ?? ''} ${flatRow.row.value}`.toLowerCase();
     return text.includes(normalizedQuery) ? [index] : [];
   });
 }

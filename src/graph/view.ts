@@ -1,5 +1,5 @@
 import { GraphInteractions } from './interactions';
-import type { GraphNode } from './model';
+import type { FlatRow, GraphNode } from './model';
 import { computeBounds, layoutNode } from './layout';
 import { renderGraph } from './render';
 
@@ -13,15 +13,12 @@ export class GraphView {
     onRowToggle: () => void
   ) {
     this.group = group;
-    this.interactions = new GraphInteractions(svg, group, {
-      onToggleRow: onRowToggle,
-      onViewportChange: () => {},
-    });
+    this.interactions = new GraphInteractions(svg, group, onRowToggle);
   }
 
-  render(root: GraphNode, highlightIndices: Set<number>): void {
+  render(root: GraphNode, highlightIndices: Set<number>, flatRows: FlatRow[]): void {
     layoutNode(root, 0, 0, 0);
-    const { svg, flatRows } = renderGraph(root, highlightIndices);
+    const { svg } = renderGraph(root, highlightIndices, flatRows);
     this.group.innerHTML = svg;
     this.interactions.setFlatRows(flatRows);
   }

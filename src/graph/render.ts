@@ -2,7 +2,7 @@
  * SVG renderer for the JSON graph.
  * Builds an SVG string from the laid-out node tree.
  */
-import type { GraphNode, FlatRow } from './model';
+import type { GraphNode, FlatRow, Row } from './model';
 import { flattenRows } from './model';
 
 const ROW_H = 26;
@@ -37,73 +37,78 @@ function esc(s: string): string {
 /**
  * Render a single node (card) as SVG string.
  * @param node - The graph node to render
- * @param flatIndex - Starting index in the flat row array (for data-r attributes)
- * @param highlightSet - Set of flat row indices to highlight (search results)
- * @returns SVG string and the number of flat rows consumed
+ * @param rowIndices - Canonical visible-row index for each row in the graph
+ * @param highlightSet - Visible row indices to highlight as search results
+ * @returns SVG markup for the node
  */
 function renderNode(
   node: GraphNode,
-  flatIndex: number,
+  rowIndices: Map<Row, number>,
   highlightSet: Set<number>
-): { svg: string; rowsConsumed: number } {
+): string {
   let svg = '';
-  let consumed = 0;
 
-  if (node.pill) {
+  if (node.isPill) {
     // Pill node: small rounded rect with text
-    const isHighlighted = highlightSet.has(flatIndex);
+    const rowIndex = rowIndices.get(node.rows[0]);
+    const isHighlighted = rowIndex !== undefined && highlightSet.has(rowIndex);
     const fill = isHighlighted ? HIGHLIGHT_COLOR : PILL_BG;
     const textFill = isHighlighted ? '#000' : TEXT_COLOR;
-    svg += `<rect x="${node.x}" y="${node.y}" width="${node.w}" height="${node.h}" rx="13" ry="13" fill="${fill}" stroke="${STROKE_COLOR}" stroke-width="1.5"/>`;
-    svg += `<text x="${node.x + node.w / 2}" y="${node.y + node.h / 2 + 5}" text-anchor="middle" fill="${textFill}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(node.rows[0].t)}</text>`;
-    consumed = 1;
-    return { svg, rowsConsumed: consumed };
+    svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="13" ry="13" fill="${fill}" stroke="${STROKE_COLOR}" stroke-width="1.5"/>`;
+    svg += `<text x="${node.x + node.width / 2}" y="${node.y + node.height / 2 + 5}" text-anchor="middle" fill="${textFill}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(node.rows[0].value)}</text>`;
+    return svg;
   }
 
   // Card node: rounded rect with rows
-  const fillColor = DEPTH_COLORS[node.d % DEPTH_COLORS.length];
-  svg += `<rect x="${node.x}" y="${node.y}" width="${node.w}" height="${node.h}" rx="${BORDER_R}" ry="${BORDER_R}" fill="${fillColor}" stroke="${STROKE_COLOR}" stroke-width="${STROKE_W}"/>`;
+  const fillColor = DEPTH_COLORS[node.depth % DEPTH_COLORS.length];
+  svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="${BORDER_R}" ry="${BORDER_R}" fill="${fillColor}" stroke="${STROKE_COLOR}" stroke-width="${STROKE_W}"/>`;
 
   // Render each row
   node.rows.forEach((row, ri) => {
     const ry = node.y + PAD_Y + ri * ROW_H;
     const tx = node.x + PAD_X;
-    const rowFlatIdx = flatIndex + consumed;
-    consumed++;
-
-    const isHighlighted = highlightSet.has(rowFlatIdx);
+    const rowFlatIndex = rowIndices.get(row) ?? -1;
+    const isHighlighted = highlightSet.has(rowFlatIndex);
 
     // Highlight background
     if (isHighlighted) {
-      svg += `<rect x="${node.x + 2}" y="${ry - 3}" width="${node.w - 4}" height="${ROW_H}" rx="4" fill="${HIGHLIGHT_COLOR}" opacity="0.3"/>`;
+      svg += `<rect x="${node.x + 2}" y="${ry - 3}" width="${node.width - 4}" height="${ROW_H}" rx="4" fill="${HIGHLIGHT_COLOR}" opacity="0.3"/>`;
+    }
+
+    if (row.children) {
+      svg += `<g data-row-index="${rowFlatIndex}" role="button" tabindex="0" aria-expanded="${Boolean(row.isExpanded)}" aria-label="${esc(`${row.isExpanded ? 'Collapse' : 'Expand'} ${formatRowLabel(row)}`)}" style="cursor:pointer">`;
     }
 
     // Expand/collapse indicator for rows with children
-    if (row.kids) {
-      const arrow = row.open ? '▾' : '▸';
-      svg += `<text x="${tx - 2}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="12" font-family="'JetBrains Mono', monospace" data-r="${rowFlatIdx}" style="cursor:pointer">${arrow}</text>`;
+    if (row.children) {
+      const arrow = row.isExpanded ? '▾' : '▸';
+      svg += `<text x="${tx - 2}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="12" font-family="'JetBrains Mono', monospace">${arrow}</text>`;
     }
 
     // Key text
-    const keyOffset = row.kids ? 12 : 0;
-    if (row.k) {
-      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${KEY_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace" data-r="${rowFlatIdx}" style="cursor:${row.kids ? 'pointer' : 'default'}">`;
-      svg += `<tspan fill="${KEY_COLOR}">${esc(row.k)}</tspan>`;
-      svg += `<tspan fill="${TEXT_COLOR}">${esc(row.t)}</tspan>`;
+    const keyOffset = row.children ? 12 : 0;
+    if (row.key !== null) {
+      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${KEY_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace">`;
+      svg += `<tspan fill="${KEY_COLOR}">${esc(`${row.key}: `)}</tspan>`;
+      svg += `<tspan fill="${TEXT_COLOR}">${esc(row.value)}</tspan>`;
       svg += `</text>`;
     } else {
-      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace" data-r="${rowFlatIdx}">${esc(row.t)}</text>`;
+      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(row.value)}</text>`;
+    }
+
+    if (row.children) {
+      svg += '</g>';
     }
 
     // Connection dot for rows with children
-    if (row.kids && row.open) {
-      const dotX = node.x + node.w;
+    if (row.children && row.isExpanded) {
+      const dotX = node.x + node.width;
       const dotY = ry + ROW_H / 2 + 3;
       svg += `<circle cx="${dotX}" cy="${dotY}" r="4" fill="${STROKE_COLOR}"/>`;
     }
   });
 
-  return { svg, rowsConsumed: consumed };
+  return svg;
 }
 
 /**
@@ -114,10 +119,10 @@ function renderEdge(
   rowIndex: number,
   childNode: GraphNode
 ): string {
-  const x1 = parentNode.x + parentNode.w;
+  const x1 = parentNode.x + parentNode.width;
   const y1 = parentNode.y + PAD_Y + rowIndex * ROW_H + ROW_H / 2 + 3;
   const x2 = childNode.x;
-  const y2 = childNode.y + childNode.h / 2;
+  const y2 = childNode.y + childNode.height / 2;
 
   const cpOffset = Math.min(Math.abs(x2 - x1) * 0.5, 80);
   const cp1x = x1 + cpOffset;
@@ -126,31 +131,31 @@ function renderEdge(
   return `<path d="M${x1},${y1} C${cp1x},${y1} ${cp2x},${y2} ${x2},${y2}" fill="none" stroke="${EDGE_COLOR}" stroke-width="1.5" opacity="0.6"/>`;
 }
 
+function formatRowLabel(row: Row): string {
+  return row.key === null ? row.value : `${row.key}: ${row.value}`;
+}
+
 /**
  * Render the entire graph as an SVG string.
  * Returns the SVG inner content (no <svg> wrapper - caller adds that with viewBox).
  */
 export function renderGraph(
   root: GraphNode,
-  highlightIndices: Set<number> = new Set()
+  highlightIndices: Set<number> = new Set(),
+  flatRows: FlatRow[] = flattenRows(root)
 ): { svg: string; flatRows: FlatRow[] } {
-  const flatRows = flattenRows(root);
+  const rowIndices = new Map(flatRows.map(({ row }, index) => [row, index]));
   let edgesSvg = '';
   let nodesSvg = '';
 
   // Render function that walks the tree
-  let currentFlatIdx = 0;
-
   function walkRender(node: GraphNode) {
-    const startIdx = currentFlatIdx;
-    const result = renderNode(node, startIdx, highlightIndices);
-    nodesSvg += result.svg;
-    currentFlatIdx += result.rowsConsumed;
+    nodesSvg += renderNode(node, rowIndices, highlightIndices);
 
     // Render edges and recurse into children
     node.rows.forEach((row, ri) => {
-      if (row.kids && row.open) {
-        for (const kid of row.kids) {
+      if (row.children && row.isExpanded) {
+        for (const kid of row.children) {
           edgesSvg += renderEdge(node, ri, kid);
           walkRender(kid);
         }

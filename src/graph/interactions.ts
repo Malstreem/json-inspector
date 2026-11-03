@@ -11,32 +11,28 @@ export interface ViewportState {
   zoom: number;
 }
 
-export interface InteractionCallbacks {
-  onToggleRow: (row: Row) => void;
-  onViewportChange: (state: ViewportState) => void;
-}
-
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.15;
 
 export class GraphInteractions {
-  private svg: SVGSVGElement;
-  private group: SVGGElement;
+  private readonly svg: SVGSVGElement;
+  private readonly group: SVGGElement;
   private state: ViewportState = { panX: 40, panY: 40, zoom: 1 };
   private isPanning = false;
   private panStart = { x: 0, y: 0 };
-  private callbacks: InteractionCallbacks;
+  private readonly onToggleRow: (row: Row) => void;
   private flatRows: FlatRow[] = [];
+  private readonly eventController = new AbortController();
 
   constructor(
     svg: SVGSVGElement,
     group: SVGGElement,
-    callbacks: InteractionCallbacks
+    onToggleRow: (row: Row) => void
   ) {
     this.svg = svg;
     this.group = group;
-    this.callbacks = callbacks;
+    this.onToggleRow = onToggleRow;
     this.bindEvents();
     this.applyTransform();
   }
@@ -46,27 +42,31 @@ export class GraphInteractions {
   }
 
   private bindEvents(): void {
+    const { signal } = this.eventController;
+
     // Pan
-    this.svg.addEventListener('mousedown', this.onMouseDown);
-    document.addEventListener('mousemove', this.onMouseMove);
-    document.addEventListener('mouseup', this.onMouseUp);
+    this.svg.addEventListener('mousedown', this.onMouseDown, { signal });
+    document.addEventListener('mousemove', this.onMouseMove, { signal });
+    document.addEventListener('mouseup', this.onMouseUp, { signal });
 
     // Zoom
-    this.svg.addEventListener('wheel', this.onWheel, { passive: false });
+    this.svg.addEventListener('wheel', this.onWheel, { passive: false, signal });
 
     // Click (event delegation for row toggles)
-    this.svg.addEventListener('click', this.onClick);
+    this.svg.addEventListener('click', this.onClick, { signal });
+    this.svg.addEventListener('keydown', this.onKeyDown, { signal });
 
     // Touch support
-    this.svg.addEventListener('touchstart', this.onTouchStart, { passive: false });
-    this.svg.addEventListener('touchmove', this.onTouchMove, { passive: false });
-    this.svg.addEventListener('touchend', this.onTouchEnd);
+    this.svg.addEventListener('touchstart', this.onTouchStart, { passive: false, signal });
+    this.svg.addEventListener('touchmove', this.onTouchMove, { passive: false, signal });
+    this.svg.addEventListener('touchend', this.onTouchEnd, { signal });
   }
 
   private onMouseDown = (e: MouseEvent): void => {
-    // Ignore if clicking on a data-r element (row click)
-    const target = e.target as Element;
-    if (target.closest('[data-r]')) return;
+    // Let expandable rows handle their own click without starting a pan.
+    if (!(e.target instanceof Element)) return;
+    const target = e.target;
+    if (target.closest('[data-row-index]')) return;
 
     this.isPanning = true;
     this.panStart = { x: e.clientX - this.state.panX, y: e.clientY - this.state.panY };
@@ -93,33 +93,41 @@ export class GraphInteractions {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const oldZoom = this.state.zoom;
     const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom + delta));
-
-    // Zoom toward cursor
-    const scale = newZoom / oldZoom;
-    this.state.panX = mouseX - (mouseX - this.state.panX) * scale;
-    this.state.panY = mouseY - (mouseY - this.state.panY) * scale;
-    this.state.zoom = newZoom;
-
-    this.applyTransform();
-    this.callbacks.onViewportChange(this.state);
+    this.zoomAtPoint(this.state.zoom + delta, mouseX, mouseY);
   };
 
   private onClick = (e: MouseEvent): void => {
-    const target = e.target as Element;
-    const rowEl = target.closest('[data-r]');
+    if (!(e.target instanceof Element)) return;
+    const target = e.target;
+    const rowEl = target.closest('[data-row-index]');
     if (!rowEl) return;
 
-    const idx = parseInt(rowEl.getAttribute('data-r')!, 10);
-    if (isNaN(idx) || idx >= this.flatRows.length) return;
-
-    const fr = this.flatRows[idx];
-    if (toggleRow(fr.row)) {
-      this.callbacks.onToggleRow(fr.row);
-    }
+    this.toggleRowAtElement(rowEl, false);
   };
+
+  private onKeyDown = (e: KeyboardEvent): void => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (!(e.target instanceof Element)) return;
+    const rowEl = e.target.closest('[data-row-index][role="button"]');
+    if (!rowEl) return;
+
+    e.preventDefault();
+    this.toggleRowAtElement(rowEl, true);
+  };
+
+  private toggleRowAtElement(element: Element, restoreFocus: boolean): void {
+    const index = Number(element.getAttribute('data-row-index'));
+    if (!Number.isInteger(index) || index < 0 || index >= this.flatRows.length) return;
+
+    const fr = this.flatRows[index];
+    if (toggleRow(fr.row)) {
+      this.onToggleRow(fr.row);
+      if (restoreFocus) {
+        this.svg.querySelector<SVGGElement>(`[data-row-index="${index}"][role="button"]`)?.focus();
+      }
+    }
+  }
 
   private onTouchStart = (e: TouchEvent): void => {
     if (e.touches.length === 1) {
@@ -149,18 +157,21 @@ export class GraphInteractions {
     );
   }
 
+  private zoomAtPoint(nextZoom: number, x: number, y: number): void {
+    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+    const scale = zoom / this.state.zoom;
+    this.state.panX = x - (x - this.state.panX) * scale;
+    this.state.panY = y - (y - this.state.panY) * scale;
+    this.state.zoom = zoom;
+    this.applyTransform();
+  }
+
   /** Zoom in by one step */
   zoomIn(): void {
     const rect = this.svg.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
-    const oldZoom = this.state.zoom;
-    const newZoom = Math.min(MAX_ZOOM, oldZoom + ZOOM_STEP);
-    const scale = newZoom / oldZoom;
-    this.state.panX = cx - (cx - this.state.panX) * scale;
-    this.state.panY = cy - (cy - this.state.panY) * scale;
-    this.state.zoom = newZoom;
-    this.applyTransform();
+    this.zoomAtPoint(this.state.zoom + ZOOM_STEP, cx, cy);
   }
 
   /** Zoom out by one step */
@@ -168,13 +179,7 @@ export class GraphInteractions {
     const rect = this.svg.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
-    const oldZoom = this.state.zoom;
-    const newZoom = Math.max(MIN_ZOOM, oldZoom - ZOOM_STEP);
-    const scale = newZoom / oldZoom;
-    this.state.panX = cx - (cx - this.state.panX) * scale;
-    this.state.panY = cy - (cy - this.state.panY) * scale;
-    this.state.zoom = newZoom;
-    this.applyTransform();
+    this.zoomAtPoint(this.state.zoom - ZOOM_STEP, cx, cy);
   }
 
   /** Fit the entire graph into the viewport */
@@ -197,7 +202,6 @@ export class GraphInteractions {
     }
 
     this.applyTransform();
-    this.callbacks.onViewportChange(this.state);
   }
 
   /** Center the view on a specific node */
@@ -206,23 +210,13 @@ export class GraphInteractions {
     const cx = rect.width / 2;
     const cy = rect.height / 2;
 
-    this.state.panX = cx - (node.x + node.w / 2) * this.state.zoom;
-    this.state.panY = cy - (node.y + node.h / 2) * this.state.zoom;
+    this.state.panX = cx - (node.x + node.width / 2) * this.state.zoom;
+    this.state.panY = cy - (node.y + node.height / 2) * this.state.zoom;
     this.applyTransform();
   }
 
-  getState(): ViewportState {
-    return { ...this.state };
-  }
-
   destroy(): void {
-    this.svg.removeEventListener('mousedown', this.onMouseDown);
-    document.removeEventListener('mousemove', this.onMouseMove);
-    document.removeEventListener('mouseup', this.onMouseUp);
-    this.svg.removeEventListener('wheel', this.onWheel);
-    this.svg.removeEventListener('click', this.onClick);
-    this.svg.removeEventListener('touchstart', this.onTouchStart);
-    this.svg.removeEventListener('touchmove', this.onTouchMove);
-    this.svg.removeEventListener('touchend', this.onTouchEnd);
+    this.eventController.abort();
+    this.svg.style.cursor = '';
   }
 }
