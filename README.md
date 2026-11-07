@@ -31,6 +31,10 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
 - Explore nested objects and arrays in a graph; expand or collapse branches.
 - New documents show the root and its immediate nested cards first; deeper
   graph nodes are created only when their branches are expanded.
+- Arrays with more than 100 items start collapsed to keep initial graph
+  construction and layout responsive. This applies to root arrays and arrays
+  nested inside objects. Use **Expand all nodes** to open the complete graph,
+  including large arrays.
 - Only nodes in the graph viewport and a small overscan region are inserted into
   the SVG; panning, zooming, and resizing update the rendered set.
 - Expand and collapse graph branches with Enter or Space; nesting beyond 100
