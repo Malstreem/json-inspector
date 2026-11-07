@@ -54,4 +54,12 @@ to represent data that failed to parse.
 ```sh
 npm test
 npm run build
+npm run benchmark
+npx playwright install chromium
+npm run test:e2e
 ```
+
+The benchmark suite measures JSON parsing, graph construction, row flattening,
+layout, and SVG generation separately. Its initial local measurements and
+environment caveats are recorded in [benchmarks/BASELINE.md](./benchmarks/BASELINE.md).
+Playwright's Chromium install is only needed once per machine.
