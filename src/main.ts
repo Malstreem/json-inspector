@@ -4,9 +4,9 @@ import { createEditor } from './editor/setup';
 import { downloadGraphSvg } from './files/download-svg';
 import { GraphView } from './graph/view';
 import {
+  setProcessingTime,
   initStatusBar,
   setCopyStatus,
-  setParseTime,
   setNodeCount,
   clearError,
   setError,
@@ -53,7 +53,7 @@ function init(): () => void {
   );
   controller = new InspectorController(graphView, {
     onNodeCount: setNodeCount,
-    onParseTime: setParseTime,
+    onProcessingTime: setProcessingTime,
     onError: (message) => {
       if (message === null) clearError();
       else setError(message);
@@ -62,30 +62,34 @@ function init(): () => void {
 
   let documentTimer: ReturnType<typeof setTimeout> | null = null;
   const editor = createEditor(editorContainer, initialJson, (source) => {
+    controller.invalidatePendingRequests();
     if (documentTimer) clearTimeout(documentTimer);
     documentTimer = setTimeout(() => updateDocument(source), 200);
   });
   let isDestroyed = false;
 
-  function updateDocument(source: string): void {
+  function updateDocument(source: string): Promise<void> {
     if (documentTimer) clearTimeout(documentTimer);
     documentTimer = null;
-    controller.setDocument(source);
+    return controller.setDocument(source);
   }
 
-  controller.setDocument(initialJson);
-  controller.fitToView();
+  void updateDocument(initialJson).then(() => {
+    if (!isDestroyed && editor.getValue() === initialJson) controller.fitToView();
+  });
 
   buttons.format.addEventListener('click', () => {
-    const formatted = controller.formatDocument(editor.getValue());
-    if (formatted !== null) editor.setValue(formatted);
+    void controller.formatDocument(editor.getValue()).then((formatted) => {
+      if (!isDestroyed && formatted !== null) editor.setValue(formatted);
+    });
   }, { signal });
 
   buttons.sample.addEventListener('click', () => {
     const sample = getSampleJSON();
     editor.setValue(sample);
-    updateDocument(sample);
-    controller.fitToView();
+    void updateDocument(sample).then(() => {
+      if (!isDestroyed && editor.getValue() === sample) controller.fitToView();
+    });
   }, { signal });
 
   buttons.open.addEventListener('click', () => fileInput.click(), { signal });
@@ -151,8 +155,9 @@ function init(): () => void {
       event.key.toLowerCase() === 'f'
     ) {
       event.preventDefault();
-      const formatted = controller.formatDocument(editor.getValue());
-      if (formatted !== null) editor.setValue(formatted);
+      void controller.formatDocument(editor.getValue()).then((content) => {
+        if (!isDestroyed && content !== null) editor.setValue(content);
+      });
     }
   }, { signal });
 
@@ -164,6 +169,7 @@ function init(): () => void {
     if (searchTimer) clearTimeout(searchTimer);
     editor.destroy();
     graphView.destroy();
+    controller.destroy();
     destroyPaneResizer();
   };
 }

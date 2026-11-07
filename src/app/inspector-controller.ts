@@ -1,14 +1,15 @@
-import { parseJson } from '../json/parse';
 import {
-  GraphDepthError,
-  flattenRows,
   collapseAll,
   expandAll,
-  buildGraph,
-  type FlatRow,
+  flattenRows,
   type GraphNode,
+  type FlatRow,
 } from '../graph/projection';
 import { searchNodes } from '../graph/search';
+import {
+  JsonProcessingWorker,
+  type JsonProcessingPort,
+} from '../workers/json-processing-client';
 
 export interface GraphViewPort {
   render(root: GraphNode, highlightIndices: Set<number>, flatRows: FlatRow[]): void;
@@ -19,7 +20,7 @@ export interface GraphViewPort {
 
 export interface InspectorStatus {
   onNodeCount: (count: number) => void;
-  onParseTime: (milliseconds: number) => void;
+  onProcessingTime: (milliseconds: number) => void;
   onError: (message: string | null) => void;
 }
 
@@ -29,62 +30,75 @@ export class InspectorController {
   private matches: number[] = [];
   private matchIndex = 0;
   private searchQuery = '';
+  private documentRevision = 0;
   private readonly graphView: GraphViewPort;
   private readonly status: InspectorStatus;
+  private readonly processing: JsonProcessingPort;
 
   constructor(
     graphView: GraphViewPort,
-    status: InspectorStatus
+    status: InspectorStatus,
+    processing: JsonProcessingPort = new JsonProcessingWorker()
   ) {
     this.graphView = graphView;
     this.status = status;
+    this.processing = processing;
   }
 
-  setDocument(source: string): void {
+  async setDocument(source: string): Promise<void> {
+    const revision = ++this.documentRevision;
     if (!source.trim()) {
       this.clearGraph();
       this.status.onError(null);
       return;
     }
 
-    const startedAt = performance.now();
-    const result = parseJson(source);
-    const parseTime = performance.now() - startedAt;
-
-    if (!result.ok) {
-      this.clearGraph();
-      this.status.onError(result.error);
-      return;
-    }
-
-    let graph: ReturnType<typeof buildGraph>;
     try {
-      graph = buildGraph(result.value);
-    } catch (error) {
-      if (!(error instanceof GraphDepthError)) throw error;
-      this.clearGraph();
-      this.status.onError(error.message);
-      return;
-    }
+      const result = await this.processing.inspect(source);
+      if (revision !== this.documentRevision) return;
+      this.status.onProcessingTime(result.elapsedMs);
+      if (!result.ok) {
+        this.clearGraph();
+        this.status.onError(result.error);
+        return;
+      }
 
-    const { root, nodeCount } = graph;
-    this.root = root;
-    this.status.onError(null);
-    this.status.onNodeCount(nodeCount);
-    this.status.onParseTime(parseTime);
-    this.refresh();
+      const { root, nodeCount } = result.graph;
+      this.root = root;
+      this.status.onError(null);
+      this.status.onNodeCount(nodeCount);
+      this.refresh();
+    } catch (error) {
+      if (revision !== this.documentRevision) return;
+      this.clearGraph();
+      this.status.onError(this.processingError(error));
+    }
   }
 
-  formatDocument(source: string): string | null {
-    const result = parseJson(source);
-    if (!result.ok) {
+  async formatDocument(source: string): Promise<string | null> {
+    const revision = ++this.documentRevision;
+    try {
+      const result = await this.processing.format(source);
+      if (revision !== this.documentRevision) return null;
+      this.status.onProcessingTime(result.elapsedMs);
+      if (!result.ok) {
+        this.clearGraph();
+        this.status.onError(result.error);
+        return null;
+      }
+
+      this.status.onError(null);
+      return result.formatted;
+    } catch (error) {
+      if (revision !== this.documentRevision) return null;
       this.clearGraph();
-      this.status.onError(result.error);
+      this.status.onError(this.processingError(error));
       return null;
     }
+  }
 
-    this.status.onError(null);
-    return JSON.stringify(result.value, null, 2);
+  invalidatePendingRequests(): void {
+    this.documentRevision++;
   }
 
   search(query: string): void {
@@ -142,14 +156,24 @@ export class InspectorController {
     return this.root;
   }
 
+  destroy(): void {
+    this.documentRevision++;
+    this.processing.destroy();
+  }
+
   private clearGraph(): void {
     this.root = null;
     this.flatRows = [];
     this.matches = [];
     this.matchIndex = 0;
     this.status.onNodeCount(0);
-    this.status.onParseTime(0);
+    this.status.onProcessingTime(0);
     this.graphView.clear();
+  }
+
+  private processingError(error: unknown): string {
+    const detail = error instanceof Error ? `: ${error.message}` : '';
+    return `Unable to process JSON in the background${detail}`;
   }
 
   private centerOnCurrentMatch(): void {

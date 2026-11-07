@@ -26,6 +26,8 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
 ## Features
 
 - Edit JSON with syntax highlighting, formatting, and inline parse diagnostics.
+- JSON parsing, graph projection, and formatting run in a Web Worker to keep
+  expensive processing off the UI thread.
 - Explore nested objects and arrays in a graph; expand or collapse branches.
 - Expand and collapse graph branches with Enter or Space; nesting beyond 100
   graph levels is reported as an error.
@@ -43,6 +45,8 @@ to represent data that failed to parse.
 
 - `src/app/` coordinates document, search, and graph state.
 - `src/json/` contains framework-independent JSON value types and parsing.
+- `src/workers/` runs JSON parsing, graph projection, and formatting off the
+  main thread; stale results are discarded when newer editor input arrives.
 - `src/graph/projection.ts` adapts JSON values into graph-specific interactive
   state; layout, search, SVG rendering, and interactions stay in `src/graph/`.
 - `src/editor/` adapts CodeMirror to the application.

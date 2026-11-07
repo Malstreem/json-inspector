@@ -4,14 +4,14 @@
 
 const els = {
   nodes: null as HTMLElement | null,
-  parseTime: null as HTMLElement | null,
+  processingTime: null as HTMLElement | null,
   error: null as HTMLElement | null,
   copyStatus: null as HTMLElement | null,
 };
 
 export function initStatusBar(): void {
   els.nodes = document.getElementById('status-nodes');
-  els.parseTime = document.getElementById('status-parse-time');
+  els.processingTime = document.getElementById('status-processing-time');
   els.error = document.getElementById('status-error');
   els.copyStatus = document.getElementById('status-copy');
 }
@@ -20,9 +20,12 @@ export function setNodeCount(count: number): void {
   if (els.nodes) els.nodes.textContent = `Nodes: ${count}`;
 }
 
-export function setParseTime(ms: number): void {
-  if (els.parseTime) {
-    els.parseTime.textContent = ms >= 1 ? `${ms.toFixed(1)} ms` : `${(ms * 1000).toFixed(0)} μs`;
+export function setProcessingTime(ms: number): void {
+  if (els.processingTime) {
+    const formattedTime = ms >= 1
+      ? `${ms.toFixed(1)} ms`
+      : `${(ms * 1000).toFixed(0)} μs`;
+    els.processingTime.textContent = `Process: ${formattedTime}`;
   }
 }
 
