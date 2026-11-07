@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { buildGraph, flattenRows } from '../projection';
 import { layoutNode } from '../layout';
-import { renderGraph } from '../render';
+import {
+  createGraphRenderIndex,
+  renderGraph,
+} from '../render';
 
 describe('renderGraph', () => {
   it('uses the canonical visible row indices for expandable SVG controls', () => {
@@ -77,6 +80,7 @@ describe('renderGraph', () => {
     farNode.x = 1000;
     farNode.y = 0;
 
+    const graphIndex = createGraphRenderIndex(root);
     const { svg, nodes } = renderGraph(root, new Set(), flattenRows(root), {
       minX: 500,
       minY: 0,
@@ -84,12 +88,51 @@ describe('renderGraph', () => {
       maxY: 200,
       width: 200,
       height: 200,
-    });
+    }, graphIndex);
 
     expect(nodes).toEqual([root, nearNode, farNode]);
     expect(svg).toContain('data-node-index="1"');
     expect(svg).not.toContain('data-node-index="0"');
     expect(svg).not.toContain('data-node-index="2"');
-    expect([...svg.matchAll(/<path /g)]).toHaveLength(1);
+    expect([...svg.matchAll(/<path /g)]).toHaveLength(2);
+  });
+
+  it('preserves row and node indexes when rendering a viewport subset', () => {
+    const { root } = buildGraph({
+      near: { value: 1 },
+      far: { value: 2 },
+    });
+    const nearNode = root.rows[0].children?.[0];
+    const farNode = root.rows[1].children?.[0];
+    if (!nearNode || !farNode) throw new Error('Expected expanded root children.');
+    root.x = 0;
+    root.y = 0;
+    nearNode.x = 500;
+    nearNode.y = 0;
+    farNode.x = 1000;
+    farNode.y = 1000;
+    const flatRows = flattenRows(root);
+    const graphIndex = createGraphRenderIndex(root);
+
+    const { svg, nodes: allNodes } = renderGraph(
+      root,
+      new Set(),
+      flatRows,
+      {
+        minX: 500,
+        minY: 0,
+        maxX: 700,
+        maxY: 200,
+        width: 200,
+        height: 200,
+      },
+      graphIndex
+    );
+
+    expect(allNodes).toEqual([root, nearNode, farNode]);
+    expect(svg).toContain('data-node-index="1"');
+    expect(svg).not.toContain('data-node-index="2"');
+    expect(svg).toContain('data-row-index="1"');
+    expect(svg).not.toContain('data-row-index="3"');
   });
 });

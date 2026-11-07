@@ -5,7 +5,10 @@ import {
   buildGraph,
 } from '../src/graph/projection';
 import { layoutNode } from '../src/graph/layout';
-import { renderGraph } from '../src/graph/render';
+import {
+  createGraphRenderIndex,
+  renderGraph,
+} from '../src/graph/render';
 import { parseJson } from '../src/json/parse';
 import { createJsonFixtures } from './fixtures';
 
@@ -24,6 +27,7 @@ describe('JSON pipeline baseline', () => {
     expandAll(fullGraph.root);
     const fullFlatRows = flattenRows(fullGraph.root);
     layoutNode(fullGraph.root, 0, 0);
+    const fullRenderIndex = createGraphRenderIndex(fullGraph.root);
     const viewport = {
       minX: 0,
       minY: 0,
@@ -71,8 +75,17 @@ describe('JSON pipeline baseline', () => {
         renderGraph(fullGraph.root, new Set(), fullFlatRows);
       });
 
+      bench('build viewport graph index', () => {
+        createGraphRenderIndex(fullGraph.root);
+      });
+
       bench('generate full viewport SVG', () => {
-        renderGraph(fullGraph.root, new Set(), fullFlatRows, viewport);
+        renderGraph(fullGraph.root, new Set(), fullFlatRows, viewport, fullRenderIndex);
+      });
+
+      bench('query viewport graph index', () => {
+        fullRenderIndex.nodeSpatialIndex.query(viewport);
+        fullRenderIndex.edgeSpatialIndex.query(viewport);
       });
     });
   }

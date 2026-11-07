@@ -51,3 +51,11 @@ The initial graph still parses and counts the complete JSON document; these
 measurements show the additional projection and SVG work avoided until the
 user opens the complete graph. Use **Expand all nodes** to materialize every
 item.
+
+## Indexed viewport redraw
+
+The expanded graph's node and edge bounds are indexed after layout and reused
+while panning or zooming. On the same large fixture, one local run measured
+about 7.35 ms to build the index, 0.0004 ms to query it, and 0.0319 ms to
+generate the visible SVG using that cached index. These are isolated
+operations; an actual redraw also updates the SVG DOM.
