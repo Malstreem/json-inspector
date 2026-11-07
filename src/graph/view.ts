@@ -2,7 +2,11 @@ import { GraphInteractions } from './interactions';
 import { GraphCopyControls } from './copy-controls';
 import type { FlatRow, GraphNode } from './projection';
 import { computeBounds, layoutNode } from './layout';
-import { renderGraph } from './render';
+import {
+  createGraphRenderIndex,
+  renderGraph,
+  type GraphRenderIndex,
+} from './render';
 
 export class GraphView {
   private readonly group: SVGGElement;
@@ -11,6 +15,7 @@ export class GraphView {
   private root: GraphNode | null = null;
   private highlightIndices = new Set<number>();
   private flatRows: FlatRow[] = [];
+  private graphIndex: GraphRenderIndex | null = null;
 
   constructor(
     svg: SVGSVGElement,
@@ -33,27 +38,32 @@ export class GraphView {
     this.highlightIndices = highlightIndices;
     this.flatRows = flatRows;
     layoutNode(root, 0, 0, 0);
-    this.renderViewport();
+    this.graphIndex = createGraphRenderIndex(root);
+    this.renderViewport(true);
   }
 
-  private renderViewport(): void {
-    if (!this.root) return;
+  private renderViewport(updateGraphControls = false): void {
+    if (!this.root || !this.graphIndex) return;
     const { svg, nodes } = renderGraph(
       this.root,
       this.highlightIndices,
       this.flatRows,
-      this.interactions.getVisibleBounds()
+      this.interactions.getVisibleBounds(),
+      this.graphIndex
     );
     this.group.innerHTML = svg;
-    this.interactions.setFlatRows(this.flatRows);
-    this.copyControls.setFlatRows(this.flatRows);
-    this.copyControls.setNodes(nodes);
+    if (updateGraphControls) {
+      this.interactions.setFlatRows(this.flatRows);
+      this.copyControls.setFlatRows(this.flatRows);
+      this.copyControls.setNodes(nodes);
+    }
   }
 
   clear(): void {
     this.root = null;
     this.highlightIndices = new Set();
     this.flatRows = [];
+    this.graphIndex = null;
     this.group.innerHTML = '';
     this.interactions.setFlatRows([]);
     this.copyControls.setFlatRows([]);
