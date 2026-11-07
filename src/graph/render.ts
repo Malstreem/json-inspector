@@ -4,6 +4,7 @@
  */
 import {
   flattenRows,
+  isExpandable,
   type FlatRow,
   type GraphNode,
   type Row,
@@ -81,7 +82,7 @@ function renderNode(
     const rowFlatIndex = rowIndices.get(row) ?? -1;
     const isHighlighted = highlightSet.has(rowFlatIndex);
 
-    if (row.children) {
+    if (isExpandable(row)) {
       svg += `<g data-row-index="${rowFlatIndex}" role="button" tabindex="0" aria-expanded="${Boolean(row.isExpanded)}" aria-label="${esc(`${row.isExpanded ? 'Collapse' : 'Expand'} ${formatRowLabel(row)}`)}" style="cursor:pointer">`;
     } else {
       svg += `<g data-row-index="${rowFlatIndex}">`;
@@ -93,13 +94,13 @@ function renderNode(
     }
 
     // Expand/collapse indicator for rows with children
-    if (row.children) {
+    if (isExpandable(row)) {
       const arrow = row.isExpanded ? '▾' : '▸';
       svg += `<text x="${tx - 2}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="12" font-family="'JetBrains Mono', monospace">${arrow}</text>`;
     }
 
     // Key text
-    const keyOffset = row.children ? 12 : 0;
+    const keyOffset = isExpandable(row) ? 12 : 0;
     if (row.key !== null) {
       svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${KEY_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace">`;
       svg += `<tspan fill="${KEY_COLOR}">${esc(`${row.key}: `)}</tspan>`;
@@ -110,7 +111,7 @@ function renderNode(
     }
 
     // Connection dot for rows with children
-    if (row.children && row.isExpanded) {
+    if (isExpandable(row) && row.isExpanded) {
       const dotX = node.x + node.width;
       const dotY = ry + ROW_H / 2 + 3;
       svg += `<circle cx="${dotX}" cy="${dotY}" r="4" fill="${STROKE_COLOR}"/>`;
@@ -168,8 +169,8 @@ export function renderGraph(
 
     // Render edges and recurse into children
     node.rows.forEach((row, ri) => {
-      if (row.children && row.isExpanded) {
-        for (const kid of row.children) {
+      if (isExpandable(row) && row.isExpanded) {
+        for (const kid of row.children ?? []) {
           edgesSvg += renderEdge(node, ri, kid);
           walkRender(kid);
         }
