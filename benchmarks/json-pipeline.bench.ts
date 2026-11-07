@@ -2,7 +2,7 @@ import { bench, describe } from 'vitest';
 import {
   flattenRows,
   buildGraph,
-} from '../src/graph/model';
+} from '../src/graph/projection';
 import { layoutNode } from '../src/graph/layout';
 import { renderGraph } from '../src/graph/render';
 import { parseJson } from '../src/json/parse';
@@ -19,6 +19,14 @@ describe('JSON pipeline baseline', () => {
     const graph = buildGraph(parsed.value);
     const flatRows = flattenRows(graph.root);
     layoutNode(graph.root, 0, 0);
+    const viewport = {
+      minX: 0,
+      minY: 0,
+      maxX: 1600,
+      maxY: 900,
+      width: 1600,
+      height: 900,
+    };
 
     describe(`${fixture.name}: ${fixture.recordCount} records, ${sourceBytes} bytes`, () => {
       bench('parse JSON', () => {
@@ -39,6 +47,10 @@ describe('JSON pipeline baseline', () => {
 
       bench('generate SVG', () => {
         renderGraph(graph.root, new Set(), flatRows);
+      });
+
+      bench('generate viewport SVG', () => {
+        renderGraph(graph.root, new Set(), flatRows, viewport);
       });
     });
   }

@@ -60,4 +60,36 @@ describe('renderGraph', () => {
 
     expect(svg).toContain('fill="#ffd700" opacity="0.3"');
   });
+
+  it('renders only viewport nodes while keeping canonical node indexes', () => {
+    const { root } = buildGraph({
+      near: { value: 1 },
+      far: { value: 2 },
+    });
+    const nearNode = root.rows[0].children?.[0];
+    const farNode = root.rows[1].children?.[0];
+    if (!nearNode || !farNode) throw new Error('Expected expanded root children.');
+
+    root.x = 0;
+    root.y = 0;
+    nearNode.x = 500;
+    nearNode.y = 0;
+    farNode.x = 1000;
+    farNode.y = 0;
+
+    const { svg, nodes } = renderGraph(root, new Set(), flattenRows(root), {
+      minX: 500,
+      minY: 0,
+      maxX: 700,
+      maxY: 200,
+      width: 200,
+      height: 200,
+    });
+
+    expect(nodes).toEqual([root, nearNode, farNode]);
+    expect(svg).toContain('data-node-index="1"');
+    expect(svg).not.toContain('data-node-index="0"');
+    expect(svg).not.toContain('data-node-index="2"');
+    expect([...svg.matchAll(/<path /g)]).toHaveLength(1);
+  });
 });

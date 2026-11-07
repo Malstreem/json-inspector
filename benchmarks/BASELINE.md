@@ -18,3 +18,19 @@ SVG generation is the most expensive measured stage for the large fixture.
 This baseline helps identify which pipeline stages benefit from later
 optimization; it does not measure end-to-end browser responsiveness or editor
 input latency.
+
+## Viewport rendering comparison
+
+The benchmark also compares generating SVG for the full expanded graph with
+generating SVG for a 1,600 × 900 graph viewport. In one local run, the means
+were:
+
+| Fixture | Full SVG | Viewport SVG |
+| --- | ---: | ---: |
+| Small | 0.0548 ms | 0.0258 ms |
+| Medium | 1.1036 ms | 0.0873 ms |
+| Large | 8.6440 ms | 0.5822 ms |
+
+These are illustrative local results, not guarantees. They measure SVG string
+generation only; they do not include layout, browser DOM insertion, or
+interaction latency.
