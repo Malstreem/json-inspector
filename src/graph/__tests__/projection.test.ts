@@ -146,6 +146,7 @@ describe('flattenRows', () => {
       flags: [true, false],
     };
     const { root } = buildGraph(source);
+    expandAll(root);
     const flat = flattenRows(root);
     const nameRow = flat.find(({ row }) => row.key === 'name');
     const specialKeyRow = flat.find(({ row }) => row.key === 'display.name');
@@ -160,6 +161,7 @@ describe('flattenRows', () => {
   it('retains the original value and JSON path for graph nodes', () => {
     const source = { users: [{ name: 'Ada' }] };
     const { root } = buildGraph(source);
+    expandAll(root);
     const userNode = root.rows[0].children?.[0];
 
     expect(root.sourceValue).toBe(source);
@@ -184,15 +186,39 @@ describe('toggleRow', () => {
     const { root } = buildGraph({ items: [1, 2, 3] });
     const row = root.rows[0];
     expect(row.isExpanded).toBe(true);
-    toggleRow(row);
+    const flatRow = flattenRows(root)[0];
+    expect(flatRow).toBeDefined();
+    toggleRow(flatRow);
     expect(row.isExpanded).toBe(false);
-    toggleRow(row);
+    toggleRow(flatRow);
     expect(row.isExpanded).toBe(true);
   });
 
   it('returns false for rows without children', () => {
     const { root } = buildGraph({ name: 'test' });
-    expect(toggleRow(root.rows[0])).toBe(false);
+    expect(toggleRow(flattenRows(root)[0])).toBe(false);
+  });
+
+  it('materializes deeper child nodes only when expanded', () => {
+    const { root } = buildGraph({ outer: { inner: { value: true } } });
+    const outerRow = root.rows[0];
+    const outerNode = outerRow.children?.[0];
+    const innerRow = outerNode?.rows[0];
+
+    expect(root.rows[0].children).toHaveLength(1);
+    expect(outerRow.isExpanded).toBe(true);
+    expect(innerRow?.isExpanded).toBe(false);
+    expect(innerRow?.children).toBeUndefined();
+
+    if (!outerNode || !innerRow) throw new Error('Expected initial graph level.');
+    toggleRow({ row: innerRow, node: outerNode, rowIndex: 0, path: ['outer', 'inner'] });
+
+    expect(innerRow.children).toHaveLength(1);
+    expect(flattenRows(root).map(({ row }) => row.key)).toEqual([
+      'outer',
+      'inner',
+      'value',
+    ]);
   });
 });
 

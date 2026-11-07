@@ -29,6 +29,8 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
 - JSON parsing, graph projection, and formatting run in a Web Worker to keep
   expensive processing off the UI thread.
 - Explore nested objects and arrays in a graph; expand or collapse branches.
+- New documents show the root and its immediate nested cards first; deeper
+  graph nodes are created only when their branches are expanded.
 - Expand and collapse graph branches with Enter or Space; nesting beyond 100
   graph levels is reported as an error.
 - Search visible graph rows, pan and zoom, and fit the graph to the viewport.

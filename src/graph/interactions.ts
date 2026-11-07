@@ -125,7 +125,7 @@ export class GraphInteractions {
     if (!Number.isInteger(index) || index < 0 || index >= this.flatRows.length) return;
 
     const fr = this.flatRows[index];
-    if (toggleRow(fr.row)) {
+    if (toggleRow(fr)) {
       this.onToggleRow(fr.row);
       if (restoreFocus) {
         this.svg.querySelector<SVGGElement>(`[data-row-index="${index}"][role="button"]`)?.focus();
