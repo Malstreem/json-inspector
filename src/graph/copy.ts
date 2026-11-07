@@ -1,4 +1,4 @@
-import type { JsonPath } from './model';
+import type { JsonPath } from '../json/types';
 
 export function formatJsonPath(path: JsonPath): string {
   return path.reduce<string>((formatted, segment) => {

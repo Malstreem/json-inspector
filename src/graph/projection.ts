@@ -1,12 +1,12 @@
 /**
- * Graph data model for JSON Inspector.
- * Converts parsed JSON values into a renderable node tree.
+ * Projects JSON values into the graph view's interactive node structure.
  */
+import type { JsonValue, JsonPath } from '../json/types';
 
 /** A single row inside a graph card (node) */
 export interface Row {
   key: string | null;
-  sourceValue: unknown;
+  sourceValue: JsonValue;
   /** Display value or a summary such as "[3 items]". */
   value: string;
   pathSegment?: string | number;
@@ -14,14 +14,11 @@ export interface Row {
   isExpanded?: boolean;
 }
 
-export type JsonPathSegment = string | number;
-export type JsonPath = readonly JsonPathSegment[];
-
 /** A node in the graph - represents an object, array, or primitive pill */
 export interface GraphNode {
   /** Rows displayed inside this card */
   rows: Row[];
-  sourceValue: unknown;
+  sourceValue: JsonValue;
   path: JsonPath;
   /** Whether this is a primitive pill node (small, no card border) */
   isPill: boolean;
@@ -33,8 +30,8 @@ export interface GraphNode {
   depth: number;
 }
 
-/** Result of building a graph from a JSON value */
-export interface BuildResult {
+/** Graph-specific projection of a parsed JSON document */
+export interface GraphProjection {
   root: GraphNode;
   nodeCount: number;
 }
@@ -67,15 +64,14 @@ function truncate(s: string, max: number = MAX_TEXT_LEN): string {
 }
 
 /** Format a primitive value for display */
-function formatPrimitive(v: unknown): string {
+function formatPrimitive(v: JsonValue): string {
   if (v === null) return 'null';
-  if (v === undefined) return 'undefined';
   if (typeof v === 'string') return `"${truncate(v)}"`;
   return truncate(String(v));
 }
 
 /** Summarize an object or array for inline display */
-function summarize(v: unknown): string {
+function summarize(v: JsonValue): string {
   if (Array.isArray(v)) {
     return `[${v.length} item${v.length !== 1 ? 's' : ''}]`;
   }
@@ -87,7 +83,7 @@ function summarize(v: unknown): string {
 }
 
 /** Check if a value is a primitive (not object/array) */
-function isPrimitive(v: unknown): boolean {
+function isPrimitive(v: JsonValue): boolean {
   return v === null || typeof v !== 'object';
 }
 
@@ -100,7 +96,7 @@ interface BuildContext {
  * Returns an array of GraphNodes for object/array children.
  */
 function createChildren(
-  value: unknown,
+  value: JsonValue,
   depth: number,
   context: BuildContext,
   path: JsonPath
@@ -114,7 +110,7 @@ function createChildren(
     });
   }
   if (value !== null && typeof value === 'object') {
-    return [createObjectNode(value as Record<string, unknown>, depth, context, path)];
+    return [createObjectNode(value, depth, context, path)];
   }
   return [];
 }
@@ -127,7 +123,7 @@ function assertSupportedDepth(depth: number): void {
 }
 
 function createPillNode(
-  value: unknown,
+  value: JsonValue,
   depth: number,
   context: BuildContext,
   path: JsonPath
@@ -149,7 +145,7 @@ function createPillNode(
 
 /** Create an object/array card node */
 function createObjectNode(
-  objectValue: unknown,
+  objectValue: JsonValue,
   depth: number,
   context: BuildContext,
   path: JsonPath
@@ -176,7 +172,7 @@ function createObjectNode(
     });
   } else if (objectValue !== null && typeof objectValue === 'object') {
     // Object: each key-value pair is a row
-    for (const [key, childValue] of Object.entries(objectValue as Record<string, unknown>)) {
+    for (const [key, childValue] of Object.entries(objectValue)) {
       if (isPrimitive(childValue)) {
         const value = formatPrimitive(childValue);
         rows.push({ key, pathSegment: key, sourceValue: childValue, value });
@@ -206,10 +202,10 @@ function createObjectNode(
 }
 
 /**
- * Build the complete graph from a parsed JSON value.
- * Returns the root node and total node count.
+ * Build a graph-specific projection from a parsed JSON value.
+ * Returns its root node and total node count.
  */
-export function buildGraph(value: unknown): BuildResult {
+export function buildGraph(value: JsonValue): GraphProjection {
   const context: BuildContext = { nodeCount: 0 };
   let root: GraphNode;
 

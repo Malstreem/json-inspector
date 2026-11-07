@@ -9,6 +9,8 @@ describe('parseJson', () => {
     });
     expect(parseJson('[1, null]')).toEqual({ ok: true, value: [1, null] });
     expect(parseJson('"text"')).toEqual({ ok: true, value: 'text' });
+    expect(parseJson('42')).toEqual({ ok: true, value: 42 });
+    expect(parseJson('null')).toEqual({ ok: true, value: null });
   });
 
   it('returns a useful error for invalid JSON', () => {

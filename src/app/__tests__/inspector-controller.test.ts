@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { InspectorController, type GraphViewPort } from '../inspector-controller';
-import { MAX_GRAPH_DEPTH, type FlatRow, type GraphNode } from '../../graph/model';
+import {
+  MAX_GRAPH_DEPTH,
+  type GraphNode,
+  type FlatRow,
+} from '../../graph/projection';
+import type { JsonValue } from '../../json/types';
 
 class FakeGraphView implements GraphViewPort {
   renderedRoot: GraphNode | null = null;
@@ -64,7 +69,7 @@ describe('InspectorController', () => {
   });
 
   it('reports input that exceeds the supported graph depth', () => {
-    let value: unknown = 'leaf';
+    let value: JsonValue = 'leaf';
     for (let depth = 0; depth <= MAX_GRAPH_DEPTH; depth++) {
       value = { child: value };
     }

@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { buildGraph, flattenRows, toggleRow, collapseAll, expandAll, GraphDepthError, MAX_GRAPH_DEPTH } from '../model';
+import {
+  GraphDepthError,
+  MAX_GRAPH_DEPTH,
+  flattenRows,
+  collapseAll,
+  expandAll,
+  buildGraph,
+  toggleRow,
+} from '../projection';
+import type { JsonValue } from '../../json/types';
 
-describe('buildGraph', () => {
+describe('graph projection', () => {
   it('handles primitive values', () => {
     const result = buildGraph(42);
     expect(result.nodeCount).toBe(1);
@@ -80,7 +89,7 @@ describe('buildGraph', () => {
   });
 
   it('accepts JSON at the supported graph depth', () => {
-    let value: unknown = 'leaf';
+    let value: JsonValue = 'leaf';
     for (let depth = 0; depth <= MAX_GRAPH_DEPTH; depth++) {
       value = { child: value };
     }
@@ -89,7 +98,7 @@ describe('buildGraph', () => {
   });
 
   it('rejects JSON beyond the supported graph depth', () => {
-    let value: unknown = 'leaf';
+    let value: JsonValue = 'leaf';
     for (let depth = 0; depth <= MAX_GRAPH_DEPTH; depth++) {
       value = { child: value };
     }
@@ -157,6 +166,16 @@ describe('flattenRows', () => {
     expect(root.path).toEqual([]);
     expect(userNode?.sourceValue).toBe(source.users[0]);
     expect(userNode?.path).toEqual(['users', 0]);
+  });
+
+  it('keeps graph expansion state separate from the source JSON value', () => {
+    const source = { outer: { inner: 1 } };
+    const { root } = buildGraph(source);
+
+    collapseAll(root);
+    expandAll(root);
+
+    expect(source).toEqual({ outer: { inner: 1 } });
   });
 });
 

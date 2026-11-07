@@ -1,4 +1,4 @@
-import type { FlatRow } from './model';
+import type { FlatRow } from './projection';
 
 /**
  * Search visible graph rows and return their flat row indices.

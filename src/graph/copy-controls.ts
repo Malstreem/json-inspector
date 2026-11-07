@@ -2,7 +2,7 @@ import {
   serializeJsonValue,
   formatJsonPath,
 } from './copy';
-import type { GraphNode, FlatRow } from './model';
+import type { FlatRow, GraphNode } from './projection';
 
 type CopyAction = 'value' | 'path' | 'key';
 

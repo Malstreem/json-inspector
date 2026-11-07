@@ -1,6 +1,6 @@
 import { computeBounds, layoutNode } from '../graph/layout';
 import { exportSVG, renderGraph } from '../graph/render';
-import type { GraphNode } from '../graph/model';
+import type { GraphNode } from '../graph/projection';
 
 export function downloadGraphSvg(root: GraphNode): void {
   layoutNode(root, 0, 0, 0);
