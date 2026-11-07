@@ -1,5 +1,13 @@
 import { parseJson } from '../json/parse';
-import { buildGraph, collapseAll, expandAll, flattenRows, type FlatRow, GraphDepthError, type GraphNode } from '../graph/model';
+import {
+  GraphDepthError,
+  flattenRows,
+  collapseAll,
+  expandAll,
+  buildGraph,
+  type FlatRow,
+  type GraphNode,
+} from '../graph/projection';
 import { searchNodes } from '../graph/search';
 
 export interface GraphViewPort {

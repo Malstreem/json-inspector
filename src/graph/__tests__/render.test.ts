@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildGraph, flattenRows } from '../model';
+import { buildGraph, flattenRows } from '../projection';
 import { layoutNode } from '../layout';
 import { renderGraph } from '../render';
 

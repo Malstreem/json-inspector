@@ -1,6 +1,6 @@
 import { GraphInteractions } from './interactions';
 import { GraphCopyControls } from './copy-controls';
-import type { FlatRow, GraphNode } from './model';
+import type { FlatRow, GraphNode } from './projection';
 import { computeBounds, layoutNode } from './layout';
 import { renderGraph } from './render';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildGraph, collapseAll, flattenRows } from '../model';
+import { flattenRows, collapseAll, buildGraph } from '../projection';
 import { searchNodes } from '../search';
 
 describe('graph search', () => {

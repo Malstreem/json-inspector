@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGraph } from '../model';
+import { buildGraph } from '../projection';
 import { layoutNode, computeBounds } from '../layout';
 
 describe('layoutNode', () => {

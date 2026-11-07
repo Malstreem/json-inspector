@@ -1,8 +1,12 @@
 /**
  * Graph interaction handling: pan, zoom, search, click.
  */
-import type { GraphNode, FlatRow, Row } from './model';
-import { toggleRow } from './model';
+import {
+  type GraphNode,
+  toggleRow,
+  type FlatRow,
+  type Row,
+} from './projection';
 import type { BoundingBox } from './layout';
 
 export interface ViewportState {

@@ -42,8 +42,9 @@ to represent data that failed to parse.
 ## Source structure
 
 - `src/app/` coordinates document, search, and graph state.
-- `src/json/` contains JSON parsing independent of the UI.
-- `src/graph/` contains graph data, layout, search, SVG rendering, and interactions.
+- `src/json/` contains framework-independent JSON value types and parsing.
+- `src/graph/projection.ts` adapts JSON values into graph-specific interactive
+  state; layout, search, SVG rendering, and interactions stay in `src/graph/`.
 - `src/editor/` adapts CodeMirror to the application.
 - `src/files/` contains SVG export operations.
 - `src/ui/` contains reusable interface utilities such as the status bar and pane resizer.

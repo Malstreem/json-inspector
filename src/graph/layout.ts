@@ -2,7 +2,7 @@
  * Tidy-tree layout algorithm for the JSON graph.
  * Positions nodes left-to-right with parent → child connections.
  */
-import type { GraphNode } from './model';
+import type { GraphNode } from './projection';
 
 const GAP_X = 60;  // horizontal gap between parent and children
 const GAP_Y = 16;  // vertical gap between sibling nodes
