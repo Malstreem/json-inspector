@@ -74,6 +74,28 @@ test('virtualizes graph nodes to the viewport and updates them while panning', a
   await expect.poll(visibleNodeIndexes).not.toEqual(pannedNodeIndexes);
 });
 
+test('opens the complete graph for arrays larger than the initial limit', async ({ page }) => {
+  await page.goto('/');
+  const records = Array.from({ length: 150 }, (_, index) => ({
+    id: index,
+    details: { value: `record-${index}` },
+  }));
+  await page.locator('.cm-content').fill(JSON.stringify({ records }));
+
+  await expect(page.locator('#status-nodes')).toHaveText('Nodes: 301');
+  await expect(page.locator('#graph-group [data-node-index]')).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Expand all nodes' }).click();
+
+  await expect(page.locator('#graph-group [data-node-index]')).toHaveCount(301);
+
+  await page.locator('.cm-content').fill(JSON.stringify(records));
+  await expect(page.locator('#status-nodes')).toHaveText('Nodes: 301');
+  await expect(page.locator('#graph-group [data-node-index]')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Expand all nodes' }).click();
+  await expect(page.locator('#graph-group [data-node-index]')).toHaveCount(301);
+});
+
 test('formats JSON and copies the selected graph node', async ({ page }) => {
   await page.goto('/');
   await page.context().grantPermissions(

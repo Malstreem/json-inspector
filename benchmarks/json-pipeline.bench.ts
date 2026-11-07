@@ -1,6 +1,7 @@
 import { bench, describe } from 'vitest';
 import {
   flattenRows,
+  expandAll,
   buildGraph,
 } from '../src/graph/projection';
 import { layoutNode } from '../src/graph/layout';
@@ -19,6 +20,10 @@ describe('JSON pipeline baseline', () => {
     const graph = buildGraph(parsed.value);
     const flatRows = flattenRows(graph.root);
     layoutNode(graph.root, 0, 0);
+    const fullGraph = buildGraph(parsed.value);
+    expandAll(fullGraph.root);
+    const fullFlatRows = flattenRows(fullGraph.root);
+    layoutNode(fullGraph.root, 0, 0);
     const viewport = {
       minX: 0,
       minY: 0,
@@ -33,24 +38,41 @@ describe('JSON pipeline baseline', () => {
         parseJson(fixture.source);
       });
 
-      bench('build graph model', () => {
+      bench('build initial graph model', () => {
         buildGraph(parsed.value);
       });
 
-      bench('flatten visible rows', () => {
+      bench('build and expand full graph', () => {
+        const expandedGraph = buildGraph(parsed.value);
+        expandAll(expandedGraph.root);
+      });
+
+      bench('flatten initial rows', () => {
         flattenRows(graph.root);
       });
 
-      bench('layout graph', () => {
+      bench('flatten full rows', () => {
+        flattenRows(fullGraph.root);
+      });
+
+      bench('layout initial graph', () => {
         layoutNode(graph.root, 0, 0);
       });
 
-      bench('generate SVG', () => {
+      bench('layout full graph', () => {
+        layoutNode(fullGraph.root, 0, 0);
+      });
+
+      bench('generate initial SVG', () => {
         renderGraph(graph.root, new Set(), flatRows);
       });
 
-      bench('generate viewport SVG', () => {
-        renderGraph(graph.root, new Set(), flatRows, viewport);
+      bench('generate full SVG', () => {
+        renderGraph(fullGraph.root, new Set(), fullFlatRows);
+      });
+
+      bench('generate full viewport SVG', () => {
+        renderGraph(fullGraph.root, new Set(), fullFlatRows, viewport);
       });
     });
   }

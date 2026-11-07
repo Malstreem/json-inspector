@@ -34,3 +34,20 @@ were:
 These are illustrative local results, not guarantees. They measure SVG string
 generation only; they do not include layout, browser DOM insertion, or
 interaction latency.
+
+## Large-array initial expansion
+
+The large fixture contains 1,500 object records. Arrays with more than 100
+items now start collapsed. In one local run, the relevant means were:
+
+| Operation | Mean |
+| --- | ---: |
+| Build initial graph model | 0.2945 ms |
+| Build and expand full graph | 1.9919 ms |
+| Generate initial SVG | 0.0013 ms |
+| Generate full SVG | 34.0690 ms |
+
+The initial graph still parses and counts the complete JSON document; these
+measurements show the additional projection and SVG work avoided until the
+user opens the complete graph. Use **Expand all nodes** to materialize every
+item.

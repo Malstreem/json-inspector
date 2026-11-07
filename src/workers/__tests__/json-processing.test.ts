@@ -20,6 +20,23 @@ describe('processJsonRequest', () => {
     });
   });
 
+  it('keeps the complete node count while deferring large array nodes', () => {
+    const records = Array.from({ length: 101 }, (_, index) => ({ id: index }));
+    const response = processJsonRequest({
+      requestId: 11,
+      action: 'inspect',
+      source: JSON.stringify({ records }),
+    });
+
+    expect(response.action).toBe('inspect');
+    if (response.action !== 'inspect' || !response.result.ok) {
+      throw new Error('Expected successful graph inspection.');
+    }
+
+    expect(response.result.graph.nodeCount).toBe(102);
+    expect(response.result.graph.root.rows[0].children).toBeUndefined();
+  });
+
   it('returns parse errors without building a graph', () => {
     const response = processJsonRequest({
       requestId: 8,

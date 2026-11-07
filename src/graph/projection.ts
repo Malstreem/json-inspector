@@ -44,6 +44,7 @@ const CHAR_W = 7.9; // monospace char width estimate
 const MIN_NODE_W = 120;
 const MAX_TEXT_LEN = 60;
 export const MAX_GRAPH_DEPTH = 100;
+export const MAX_INITIAL_ARRAY_ITEMS = 100;
 
 export class GraphDepthError extends Error {
   constructor() {
@@ -80,6 +81,11 @@ function summarize(v: JsonValue): string {
     return `{${keys.length} key${keys.length !== 1 ? 's' : ''}}`;
   }
   return formatPrimitive(v);
+}
+
+function shouldExpandInitially(value: JsonValue, depth: number): boolean {
+  return depth === 0 &&
+    (!Array.isArray(value) || value.length <= MAX_INITIAL_ARRAY_ITEMS);
 }
 
 /** Check if a value is a primitive (not object/array) */
@@ -155,14 +161,15 @@ function createObjectNode(
         maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       } else {
         const value = summarize(item);
+        const isExpanded = shouldExpandInitially(objectValue, depth);
         const row: Row = {
           key,
           pathSegment: i,
           sourceValue: item,
           value,
-          isExpanded: depth === 0,
+          isExpanded,
         };
-        if (depth === 0) {
+        if (isExpanded) {
           row.children = createChildren(item, depth + 1, [...path, i]);
         }
         rows.push(row);
@@ -178,14 +185,15 @@ function createObjectNode(
         maxTextWidth = Math.max(maxTextWidth, textWidth(`${key}: ${value}`));
       } else {
         const value = summarize(childValue);
+        const isExpanded = shouldExpandInitially(childValue, depth);
         const row: Row = {
           key,
           pathSegment: key,
           sourceValue: childValue,
           value,
-          isExpanded: depth === 0,
+          isExpanded,
         };
-        if (depth === 0) {
+        if (isExpanded) {
           row.children = createChildren(childValue, depth + 1, [...path, key]);
         }
         rows.push(row);
@@ -214,11 +222,36 @@ function createObjectNode(
  * Returns its root node and total node count.
  */
 export function buildGraph(value: JsonValue): GraphProjection {
-  const nodeCount = countGraphNodes(value, 0);
+  const isLargeRootArray = Array.isArray(value) &&
+    value.length > MAX_INITIAL_ARRAY_ITEMS;
+  const nodeCount = isLargeRootArray && Array.isArray(value)
+    ? value.reduce<number>(
+        (count, item) => count + countGraphNodes(item, 1),
+        1
+      )
+    : countGraphNodes(value, 0);
   let root: GraphNode;
 
   if (isPrimitive(value)) {
     root = createPillNode(value, 0, []);
+  } else if (Array.isArray(value) && value.length > MAX_INITIAL_ARRAY_ITEMS) {
+    const summary = summarize(value);
+    root = {
+      rows: [{
+        key: null,
+        sourceValue: value,
+        value: summary,
+        isExpanded: false,
+      }],
+      sourceValue: value,
+      path: [],
+      isPill: false,
+      x: 0,
+      y: 0,
+      width: Math.max(MIN_NODE_W, textWidth(summary) + PAD_X * 2),
+      height: ROW_H + PAD_Y * 2,
+      depth: 0,
+    };
   } else {
     root = createObjectNode(value, 0, []);
   }

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   GraphDepthError,
   MAX_GRAPH_DEPTH,
+  MAX_INITIAL_ARRAY_ITEMS,
   flattenRows,
   collapseAll,
   expandAll,
@@ -58,6 +59,55 @@ describe('graph projection', () => {
     const result = buildGraph([{ a: 1 }, { b: 2 }]);
     // Root array node + 2 object nodes
     expect(result.nodeCount).toBe(3);
+  });
+
+  it('collapses large arrays initially while retaining the complete node count', () => {
+    const records = Array.from(
+      { length: MAX_INITIAL_ARRAY_ITEMS + 1 },
+      (_, index) => ({ id: index })
+    );
+    const { root, nodeCount } = buildGraph({ records });
+    const recordsRow = root.rows[0];
+
+    expect(nodeCount).toBe(records.length + 1);
+    expect(recordsRow.isExpanded).toBe(false);
+    expect(recordsRow.children).toBeUndefined();
+    expect(flattenRows(root)).toHaveLength(1);
+
+    expandAll(root);
+
+    expect(recordsRow.children).toHaveLength(records.length);
+    expect(flattenRows(root)).toHaveLength(records.length + 1);
+  });
+
+  it('keeps arrays at the initial item limit expanded', () => {
+    const records = Array.from(
+      { length: MAX_INITIAL_ARRAY_ITEMS },
+      (_, index) => ({ id: index })
+    );
+    const { root } = buildGraph({ records });
+
+    expect(root.rows[0].isExpanded).toBe(true);
+    expect(root.rows[0].children).toHaveLength(records.length);
+  });
+
+  it('collapses a large root array into an expandable summary', () => {
+    const records = Array.from(
+      { length: MAX_INITIAL_ARRAY_ITEMS + 1 },
+      (_, index) => ({ id: index })
+    );
+    const { root, nodeCount } = buildGraph(records);
+
+    expect(root.rows).toHaveLength(1);
+    expect(root.rows[0].value).toBe(`[${records.length} items]`);
+    expect(root.rows[0].isExpanded).toBe(false);
+    expect(root.rows[0].children).toBeUndefined();
+    expect(nodeCount).toBe(records.length + 1);
+
+    expandAll(root);
+
+    expect(root.rows[0].children).toHaveLength(records.length);
+    expect(flattenRows(root)).toHaveLength(records.length + 1);
   });
 
   it('handles mixed arrays (primitives and objects)', () => {
