@@ -41,6 +41,39 @@ test('searches graph rows and exports the graph', async ({ page }) => {
   expect(download.suggestedFilename()).toMatch(/\.svg$/);
 });
 
+test('virtualizes graph nodes to the viewport and updates them while panning', async ({ page }) => {
+  await page.goto('/');
+  const records = Array.from({ length: 150 }, (_, index) => ({
+    id: index,
+    details: { value: `record-${index}` },
+  }));
+  await page.locator('.cm-content').fill(JSON.stringify({ records }));
+  await expect(page.locator('#status-nodes')).toHaveText('Nodes: 301');
+  await page.getByRole('button', { name: 'Expand all nodes' }).click();
+  for (let index = 0; index < 8; index++) {
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+  }
+
+  const visibleNodeIndexes = async () => page.locator('#graph-group [data-node-index]')
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-node-index')));
+  const initialNodeIndexes = await visibleNodeIndexes();
+  expect(initialNodeIndexes.length).toBeLessThan(301);
+
+  const graphBounds = await page.locator('#graph-svg').boundingBox();
+  if (!graphBounds) throw new Error('Graph viewport is not available.');
+  const startX = graphBounds.x + graphBounds.width - 10;
+  const startY = graphBounds.y + graphBounds.height - 10;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX - 400, startY - 300, { steps: 5 });
+  await page.mouse.up();
+
+  await expect.poll(visibleNodeIndexes).not.toEqual(initialNodeIndexes);
+  const pannedNodeIndexes = await visibleNodeIndexes();
+  await page.setViewportSize({ width: 900, height: 650 });
+  await expect.poll(visibleNodeIndexes).not.toEqual(pannedNodeIndexes);
+});
+
 test('formats JSON and copies the selected graph node', async ({ page }) => {
   await page.goto('/');
   await page.context().grantPermissions(

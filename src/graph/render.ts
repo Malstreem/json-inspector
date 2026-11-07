@@ -10,6 +10,7 @@ import {
   type Row,
 } from './projection';
 import { formatJsonPath } from './copy';
+import type { BoundingBox } from './layout';
 
 const ROW_H = 26;
 const PAD_X = 14;
@@ -147,6 +148,13 @@ function formatRowLabel(row: Row): string {
   return row.key === null ? row.value : `${row.key}: ${row.value}`;
 }
 
+function isWithinViewport(node: GraphNode, viewport: BoundingBox): boolean {
+  return node.x + node.width >= viewport.minX &&
+    node.x <= viewport.maxX &&
+    node.y + node.height >= viewport.minY &&
+    node.y <= viewport.maxY;
+}
+
 /**
  * Render the entire graph as an SVG string.
  * Returns the SVG inner content (no <svg> wrapper - caller adds that with viewBox).
@@ -154,7 +162,8 @@ function formatRowLabel(row: Row): string {
 export function renderGraph(
   root: GraphNode,
   highlightIndices: Set<number> = new Set(),
-  flatRows: FlatRow[] = flattenRows(root)
+  flatRows: FlatRow[] = flattenRows(root),
+  viewport?: BoundingBox
 ): { svg: string; flatRows: FlatRow[]; nodes: GraphNode[] } {
   const rowIndices = new Map(flatRows.map(({ row }, index) => [row, index]));
   let edgesSvg = '';
@@ -165,13 +174,18 @@ export function renderGraph(
   function walkRender(node: GraphNode) {
     const nodeIndex = nodes.length;
     nodes.push(node);
-    nodesSvg += renderNode(node, rowIndices, highlightIndices, nodeIndex);
+    const nodeIsVisible = !viewport || isWithinViewport(node, viewport);
+    if (nodeIsVisible) {
+      nodesSvg += renderNode(node, rowIndices, highlightIndices, nodeIndex);
+    }
 
     // Render edges and recurse into children
     node.rows.forEach((row, ri) => {
       if (isExpandable(row) && row.isExpanded) {
         for (const kid of row.children ?? []) {
-          edgesSvg += renderEdge(node, ri, kid);
+          if (!viewport || isWithinViewport(kid, viewport)) {
+            edgesSvg += renderEdge(node, ri, kid);
+          }
           walkRender(kid);
         }
       }

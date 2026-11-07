@@ -26,17 +26,24 @@ export class GraphInteractions {
   private isPanning = false;
   private panStart = { x: 0, y: 0 };
   private readonly onToggleRow: (row: Row) => void;
+  private readonly onViewportChange: () => void;
   private flatRows: FlatRow[] = [];
   private readonly eventController = new AbortController();
+  private readonly resizeObserver: ResizeObserver;
+  private viewportFrame: number | null = null;
 
   constructor(
     svg: SVGSVGElement,
     group: SVGGElement,
-    onToggleRow: (row: Row) => void
+    onToggleRow: (row: Row) => void,
+    onViewportChange: () => void
   ) {
     this.svg = svg;
     this.group = group;
     this.onToggleRow = onToggleRow;
+    this.onViewportChange = onViewportChange;
+    this.resizeObserver = new ResizeObserver(() => this.scheduleViewportChange());
+    this.resizeObserver.observe(svg);
     this.bindEvents();
     this.applyTransform();
   }
@@ -159,6 +166,43 @@ export class GraphInteractions {
       'transform',
       `translate(${this.state.panX}, ${this.state.panY}) scale(${this.state.zoom})`
     );
+    this.scheduleViewportChange();
+  }
+
+  private scheduleViewportChange(): void {
+    if (this.viewportFrame !== null) return;
+    this.viewportFrame = requestAnimationFrame(() => {
+      this.viewportFrame = null;
+      this.onViewportChange();
+    });
+  }
+
+  getVisibleBounds(): BoundingBox {
+    const { width, height } = this.svg.getBoundingClientRect();
+    if (width <= 0 || height <= 0) {
+      return {
+        minX: -Infinity,
+        minY: -Infinity,
+        maxX: Infinity,
+        maxY: Infinity,
+        width: Infinity,
+        height: Infinity,
+      };
+    }
+
+    const overscan = 100 / this.state.zoom;
+    const minX = (-this.state.panX) / this.state.zoom - overscan;
+    const minY = (-this.state.panY) / this.state.zoom - overscan;
+    const maxX = (width - this.state.panX) / this.state.zoom + overscan;
+    const maxY = (height - this.state.panY) / this.state.zoom + overscan;
+    return {
+      minX,
+      minY,
+      maxX,
+      maxY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
   }
 
   private zoomAtPoint(nextZoom: number, x: number, y: number): void {
@@ -221,6 +265,11 @@ export class GraphInteractions {
 
   destroy(): void {
     this.eventController.abort();
+    this.resizeObserver.disconnect();
+    if (this.viewportFrame !== null) {
+      cancelAnimationFrame(this.viewportFrame);
+      this.viewportFrame = null;
+    }
     this.svg.style.cursor = '';
   }
 }
