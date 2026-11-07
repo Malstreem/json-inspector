@@ -8,9 +8,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "benchmark": "vitest bench benchmarks"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
     "vitest": "^3.2.1"
