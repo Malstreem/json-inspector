@@ -11,6 +11,7 @@ import {
 } from './projection';
 import { formatJsonPath } from './copy';
 import type { BoundingBox } from './layout';
+import { SpatialIndex } from './spatial-index';
 
 const ROW_H = 26;
 const PAD_X = 14;
@@ -148,11 +149,78 @@ function formatRowLabel(row: Row): string {
   return row.key === null ? row.value : `${row.key}: ${row.value}`;
 }
 
-function isWithinViewport(node: GraphNode, viewport: BoundingBox): boolean {
-  return node.x + node.width >= viewport.minX &&
-    node.x <= viewport.maxX &&
-    node.y + node.height >= viewport.minY &&
-    node.y <= viewport.maxY;
+interface GraphEdge {
+  parent: GraphNode;
+  rowIndex: number;
+  child: GraphNode;
+}
+
+export interface GraphRenderIndex {
+  nodes: GraphNode[];
+  nodeIndices: Map<GraphNode, number>;
+  rowIndices: Map<Row, number>;
+  edges: GraphEdge[];
+  nodeSpatialIndex: SpatialIndex<GraphNode>;
+  edgeSpatialIndex: SpatialIndex<GraphEdge>;
+}
+
+function getNodeBounds(node: GraphNode): BoundingBox {
+  return {
+    minX: node.x,
+    minY: node.y,
+    maxX: node.x + node.width,
+    maxY: node.y + node.height,
+    width: node.width,
+    height: node.height,
+  };
+}
+
+function getEdgeBounds(edge: GraphEdge): BoundingBox {
+  const { parent, rowIndex, child } = edge;
+  const startX = parent.x + parent.width;
+  const startY = parent.y + PAD_Y + rowIndex * ROW_H + ROW_H / 2 + 3;
+  const endX = child.x;
+  const endY = child.y + child.height / 2;
+  const controlOffset = Math.min(Math.abs(endX - startX) * 0.5, 80);
+  const control1X = startX + controlOffset;
+  const control2X = endX - controlOffset;
+  const minX = Math.min(startX, endX, control1X, control2X);
+  const minY = Math.min(startY, endY);
+  const maxX = Math.max(startX, endX, control1X, control2X);
+  const maxY = Math.max(startY, endY);
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
+
+export function createGraphRenderIndex(root: GraphNode): GraphRenderIndex {
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  const rowIndices = new Map<Row, number>();
+
+  function collect(node: GraphNode): void {
+    nodes.push(node);
+    node.rows.forEach((row, rowIndex) => {
+      rowIndices.set(row, rowIndices.size);
+      if (!isExpandable(row) || !row.isExpanded) return;
+      for (const child of row.children ?? []) {
+        edges.push({ parent: node, rowIndex, child });
+        collect(child);
+      }
+    });
+  }
+  collect(root);
+
+  return {
+    nodes,
+    nodeIndices: new Map(nodes.map((node, index) => [node, index])),
+    rowIndices,
+    edges,
+    nodeSpatialIndex: new SpatialIndex(
+      nodes.map((node) => ({ bounds: getNodeBounds(node), value: node }))
+    ),
+    edgeSpatialIndex: new SpatialIndex(
+      edges.map((edge) => ({ bounds: getEdgeBounds(edge), value: edge }))
+    ),
+  };
 }
 
 /**
@@ -163,41 +231,33 @@ export function renderGraph(
   root: GraphNode,
   highlightIndices: Set<number> = new Set(),
   flatRows: FlatRow[] = flattenRows(root),
-  viewport?: BoundingBox
+  viewport?: BoundingBox,
+  graphIndex: GraphRenderIndex = createGraphRenderIndex(root)
 ): { svg: string; flatRows: FlatRow[]; nodes: GraphNode[] } {
-  const rowIndices = new Map(flatRows.map(({ row }, index) => [row, index]));
-  let edgesSvg = '';
-  let nodesSvg = '';
-  const nodes: GraphNode[] = [];
-
-  // Render function that walks the tree
-  function walkRender(node: GraphNode) {
-    const nodeIndex = nodes.length;
-    nodes.push(node);
-    const nodeIsVisible = !viewport || isWithinViewport(node, viewport);
-    if (nodeIsVisible) {
-      nodesSvg += renderNode(node, rowIndices, highlightIndices, nodeIndex);
-    }
-
-    // Render edges and recurse into children
-    node.rows.forEach((row, ri) => {
-      if (isExpandable(row) && row.isExpanded) {
-        for (const kid of row.children ?? []) {
-          if (!viewport || isWithinViewport(kid, viewport)) {
-            edgesSvg += renderEdge(node, ri, kid);
-          }
-          walkRender(kid);
-        }
-      }
-    });
-  }
-
-  walkRender(root);
+  const rowIndices = graphIndex.rowIndices;
+  const nodes = viewport
+    ? graphIndex.nodeSpatialIndex.query(viewport)
+        .sort((a, b) => graphIndex.nodeIndices.get(a)! - graphIndex.nodeIndices.get(b)!)
+    : graphIndex.nodes;
+  const edges = viewport
+    ? graphIndex.edgeSpatialIndex.query(viewport)
+    : graphIndex.edges;
+  const edgesSvg = edges
+    .map(({ parent, rowIndex, child }) => renderEdge(parent, rowIndex, child))
+    .join('');
+  const nodesSvg = nodes
+    .map((node) => renderNode(
+      node,
+      rowIndices,
+      highlightIndices,
+      graphIndex.nodeIndices.get(node)!
+    ))
+    .join('');
 
   return {
     svg: edgesSvg + nodesSvg, // edges behind nodes
     flatRows,
-    nodes,
+    nodes: graphIndex.nodes,
   };
 }
 
