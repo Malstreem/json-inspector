@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "JSON Inspector",
+  "version": "0.1.0",
+  "description": "Interactive JSON tree, graph visualization, and formatting tool.",
+  "action": {},
+  "permissions": ["sidePanel"],
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "devtools_page": "devtools.html"
+}

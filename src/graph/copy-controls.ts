@@ -52,6 +52,11 @@ export class GraphCopyControls {
     this.svg.addEventListener('click', this.onSvgClick, { capture: true, signal });
     this.svg.addEventListener('focusin', this.onSvgFocusIn, { signal });
     this.svg.addEventListener('keydown', this.onSvgKeyDown, { signal });
+    this.menu.addEventListener('toggle', (event) => {
+      if ((event as ToggleEvent).newState === 'closed') {
+        this.closeMenu(true);
+      }
+    }, { signal });
     document.addEventListener('click', this.onDocumentClick, { signal });
     document.addEventListener('keydown', this.onDocumentKeyDown, { signal });
   }
@@ -59,6 +64,7 @@ export class GraphCopyControls {
   private createMenu(): HTMLDivElement {
     const menu = document.createElement('div');
     menu.className = 'graph-context-menu';
+    menu.setAttribute('popover', 'auto');
     menu.setAttribute('role', 'menu');
     menu.setAttribute('aria-label', 'Copy graph item');
 
@@ -115,6 +121,9 @@ export class GraphCopyControls {
     this.menu.style.left = `${Math.max(0, Math.min(x, window.innerWidth - menuWidth))}px`;
     this.menu.style.top = `${Math.max(0, Math.min(y, window.innerHeight - menuHeight))}px`;
     this.menu.classList.add('is-open');
+    if (typeof this.menu.showPopover === 'function' && !this.menu.matches(':popover-open')) {
+      this.menu.showPopover();
+    }
     this.menu.querySelector<HTMLButtonElement>('[data-copy-action="value"]')?.focus();
   };
 
@@ -281,6 +290,9 @@ export class GraphCopyControls {
   };
 
   private closeMenu(restoreFocus: boolean): void {
+    if (typeof this.menu.hidePopover === 'function' && this.menu.matches(':popover-open')) {
+      this.menu.hidePopover();
+    }
     if (!this.menu.classList.contains('is-open')) return;
     this.menu.classList.remove('is-open');
 

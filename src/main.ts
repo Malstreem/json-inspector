@@ -38,6 +38,8 @@ function init(): () => void {
   const editorContainer = requireElement<HTMLDivElement>('#editor-container');
   const fileInput = requireElement<HTMLInputElement>('#file-input');
   const searchInput = requireElement<HTMLInputElement>('#search-input');
+  const helpDialog = document.querySelector<HTMLDialogElement>('#help-dialog');
+  const btnHelp = document.querySelector<HTMLButtonElement>('#btn-help');
   const buttons = {
     format: requireElement<HTMLButtonElement>('#btn-format'),
     sample: requireElement<HTMLButtonElement>('#btn-sample'),
@@ -150,7 +152,33 @@ function init(): () => void {
     }
   }, { signal });
 
+  if (helpDialog && btnHelp && !('commandForElement' in HTMLButtonElement.prototype)) {
+    btnHelp.addEventListener('click', () => {
+      helpDialog.showModal();
+    }, { signal });
+  }
+
+  if (helpDialog && !('closedBy' in HTMLDialogElement.prototype)) {
+    helpDialog.addEventListener('click', (event) => {
+      if (event.target === helpDialog) {
+        helpDialog.close();
+      }
+    }, { signal });
+  }
+
   document.addEventListener('keydown', (event) => {
+    if (event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const active = document.activeElement;
+      const isInput =
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        Boolean(active?.closest('.cm-editor'));
+      if (!isInput && helpDialog && !helpDialog.open) {
+        event.preventDefault();
+        helpDialog.showModal();
+      }
+    }
+
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
       if (!editorContainer.contains(document.activeElement)) {
         event.preventDefault();

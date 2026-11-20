@@ -52,6 +52,9 @@
           <button class="icon-btn" type="button" id="btn-export" title="Export SVG" aria-label="Export graph as SVG">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
+          <button class="icon-btn" type="button" id="btn-help" title="Keyboard shortcuts & help (?)" aria-label="Keyboard shortcuts & help" commandfor="help-dialog" command="show-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
         </div>
       </header>
 
@@ -100,6 +103,37 @@
         </div>
       </footer>
     </div>
+
+    <!-- Help / Keyboard Shortcuts Dialog -->
+    <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-dialog-title" closedby="any">
+      <div class="help-dialog-content">
+        <header class="help-dialog-header">
+          <h2 id="help-dialog-title">Keyboard Shortcuts & Help</h2>
+          <form method="dialog">
+            <button class="icon-btn" type="submit" aria-label="Close dialog">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+        </header>
+        <div class="help-dialog-body">
+          <section class="shortcuts-group">
+            <h3>Navigation & Search</h3>
+            <div class="shortcut-row"><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>F</kbd> <span>Focus search input</span></div>
+            <div class="shortcut-row"><kbd>Enter</kbd> <span>Next search result</span></div>
+            <div class="shortcut-row"><kbd>Esc</kbd> <span>Clear search / Close dialogs</span></div>
+            <div class="shortcut-row"><kbd>?</kbd> <span>Open this help dialog</span></div>
+          </section>
+          <section class="shortcuts-group">
+            <h3>Graph & Clipboard</h3>
+            <div class="shortcut-row"><kbd>Click</kbd> <span>Select node / Toggle expand</span></div>
+            <div class="shortcut-row"><kbd>Right Click</kbd> <span>Open copy context menu</span></div>
+            <div class="shortcut-row"><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>C</kbd> <span>Copy selected node as JSON</span></div>
+            <div class="shortcut-row"><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Alt</kbd> + <kbd>C</kbd> <span>Copy selected node JSON path</span></div>
+            <div class="shortcut-row"><kbd>Scroll</kbd> / <kbd>Drag</kbd> <span>Zoom & Pan graph</span></div>
+          </section>
+        </div>
+      </div>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
