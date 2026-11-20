@@ -14,6 +14,13 @@ import {
 import { initPaneResizer } from './ui/pane-resizer';
 import { getSampleJSON } from './data/sample';
 
+/**
+ * VK_PROCESSKEY (229): Virtual key code emitted when an Input Method Editor (IME)
+ * is actively composing or confirming candidate text (e.g. CJK character input).
+ * Checked alongside `event.isComposing` to account for Safari's event-ordering quirk.
+ */
+const VK_PROCESSKEY = 229;
+
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
   if (!element) {
@@ -128,7 +135,7 @@ function init(): () => void {
   }, { signal });
   searchInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-      if (event.isComposing || event.keyCode === 229) {
+      if (event.isComposing || event.keyCode === VK_PROCESSKEY) {
         return;
       }
       event.preventDefault();
