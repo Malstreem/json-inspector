@@ -35,6 +35,13 @@ function init(): () => void {
   const appEvents = new AbortController();
   const { signal } = appEvents;
 
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (isMac) {
+    document.querySelectorAll<HTMLElement>('[data-platform-mod]').forEach((el) => {
+      el.textContent = '⌘';
+    });
+  }
+
   const editorContainer = requireElement<HTMLDivElement>('#editor-container');
   const fileInput = requireElement<HTMLInputElement>('#file-input');
   const searchInput = requireElement<HTMLInputElement>('#search-input');
