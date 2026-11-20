@@ -23,6 +23,19 @@ npm run dev
 
 Open the local URL printed by Vite (by default, `http://localhost:3000`).
 
+## Tech Stack
+
+- **Frontend & Tooling**: TypeScript, Vite 8.
+- **Editor**: CodeMirror 6 (syntax highlighting, folding, JSON linting).
+- **WebAssembly**: AssemblyScript compiles high-performance spatial collision & viewport queries into sub-kilobyte WebAssembly (`public/spatial.wasm`) with zero native C++/Rust toolchain dependencies.
+- **Web Workers**: Offloads JSON parsing, tree projection, and formatting off the UI thread to keep interactions smooth.
+- **Modern Web Standards**:
+  - Declarative `<dialog closedby="any">` and `commandfor="show-modal"` for accessible modals.
+  - Native `popover="auto"` context menu with `@starting-style` and `:popover-open` transitions.
+  - Standard CSS `scrollbar-width` and `scrollbar-color`.
+  - IME-safe keyboard handling (`isComposing` & `VK_PROCESSKEY`).
+- **Chrome Extension (Manifest V3)**: Can be loaded as an unpacked extension into Google Chrome as a **Side Panel** (`chrome.sidePanel`) and **DevTools Panel** (`chrome.devtools.panels`).
+
 ## Features
 
 - Edit JSON with syntax highlighting, formatting, and inline parse diagnostics.
@@ -37,22 +50,25 @@ Open the local URL printed by Vite (by default, `http://localhost:3000`).
   including large arrays.
 - Only nodes in the graph viewport and a small overscan region are inserted into
   the SVG; panning, zooming, and resizing update the rendered set.
-- The expanded graph is spatially indexed after layout, so viewport redraws
-  query visible nodes and edges instead of walking the entire graph.
+- The expanded graph is spatially indexed in **WebAssembly**, so viewport redraws
+  query visible nodes and edges in microseconds without JavaScript GC pauses.
 - Expand and collapse graph branches with Enter or Space; nesting beyond 100
   graph levels is reported as an error.
 - Search visible graph rows, pan and zoom, and fit the graph to the viewport.
-- Right-click a graph item to copy its JSON value, path, or key.
-- Select a graph block, then press `Ctrl/Cmd+C` to copy its JSON or
-  `Ctrl/Cmd+Alt+C` to copy its path.
+- Right-click a graph item to open a native popover menu to copy its JSON value, path, or key.
+- Select a graph block, then press `Ctrl+C` (`⌘+C` on macOS) to copy its JSON or
+  `Ctrl+Alt+C` (`⌘+Option+C` on macOS) to copy its path.
 - Open `.json` and `.geojson` files.
 - Export the graph as an SVG image.
+- Built-in Keyboard Shortcuts & Help dialog (press `?` or click the toolbar icon).
+- Ready to load as a Chrome Extension in Chrome Side Panel or Chrome DevTools.
 
 The graph is cleared when the editor contains invalid JSON, so it never appears
 to represent data that failed to parse.
 
 ## Source structure
 
+- `assembly/` contains AssemblyScript source files compiled to WebAssembly (`public/spatial.wasm`).
 - `src/app/` coordinates document, search, and graph state.
 - `src/json/` contains framework-independent JSON value types and parsing.
 - `src/workers/` runs JSON parsing, graph projection, and formatting off the

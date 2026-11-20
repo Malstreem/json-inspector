@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "build": "npm run build:wasm && tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -14,20 +15,21 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
+    "assemblyscript": "^0.28.20",
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
     "vitest": "^3.2.1"
   },
   "dependencies": {
-    "@codemirror/lang-json": "^6.0.1",
-    "@codemirror/view": "^6.36.8",
-    "@codemirror/state": "^6.5.2",
-    "codemirror": "^6.0.1",
-    "@codemirror/language": "^6.10.8",
     "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/language": "^6.10.8",
     "@codemirror/lint": "^6.8.5",
     "@codemirror/search": "^6.5.10",
-    "@codemirror/commands": "^6.8.1",
-    "@lezer/highlight": "^1.2.1"
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.8",
+    "@lezer/highlight": "^1.2.1",
+    "codemirror": "^6.0.1"
   }
 }

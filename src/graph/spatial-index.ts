@@ -1,4 +1,5 @@
 import type { BoundingBox } from './layout';
+import { getWasmSpatial, executeWasmSpatialQuery } from './wasm-spatial';
 
 export interface SpatialEntry<T> {
   bounds: BoundingBox;
@@ -13,6 +14,12 @@ interface SpatialBranch<T> {
 }
 
 const MAX_LEAF_ENTRIES = 12;
+
+let wasmModulePromise = getWasmSpatial();
+let cachedWasm: Awaited<ReturnType<typeof getWasmSpatial>> = null;
+void wasmModulePromise.then((w) => {
+  cachedWasm = w;
+});
 
 function unionBounds(entries: SpatialEntry<unknown>[]): BoundingBox {
   let minX = Infinity;
@@ -69,12 +76,38 @@ function intersects(a: BoundingBox, b: BoundingBox): boolean {
 
 export class SpatialIndex<T> {
   private readonly root: SpatialBranch<T> | null;
+  private readonly entries: SpatialEntry<T>[];
+  private readonly flatBoxes: Float32Array;
 
   constructor(entries: SpatialEntry<T>[]) {
+    this.entries = entries;
     this.root = entries.length ? buildBranch(entries) : null;
+    this.flatBoxes = new Float32Array(entries.length * 4);
+    for (let i = 0; i < entries.length; i++) {
+      const b = entries[i].bounds;
+      const off = i * 4;
+      this.flatBoxes[off] = b.minX;
+      this.flatBoxes[off + 1] = b.minY;
+      this.flatBoxes[off + 2] = b.maxX;
+      this.flatBoxes[off + 3] = b.maxY;
+    }
   }
 
   query(bounds: BoundingBox): T[] {
+    if (cachedWasm && this.entries.length > 0) {
+      const indices = executeWasmSpatialQuery(
+        cachedWasm,
+        this.flatBoxes,
+        this.entries.length,
+        bounds
+      );
+      const matches = new Array<T>(indices.length);
+      for (let i = 0; i < indices.length; i++) {
+        matches[i] = this.entries[indices[i]].value;
+      }
+      return matches;
+    }
+
     if (!this.root) return [];
     const matches: T[] = [];
     const pending = [this.root];
