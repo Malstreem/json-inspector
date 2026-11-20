@@ -64,7 +64,7 @@ export class GraphView {
     this.highlightIndices = new Set();
     this.flatRows = [];
     this.graphIndex = null;
-    this.group.innerHTML = '';
+    this.group.replaceChildren();
     this.interactions.setFlatRows([]);
     this.copyControls.setFlatRows([]);
     this.copyControls.setNodes([]);

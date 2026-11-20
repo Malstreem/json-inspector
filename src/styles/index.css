@@ -476,22 +476,33 @@ input {
 }
 
 /* ===== Scrollbar ===== */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+@supports not (scrollbar-color: auto) {
+  * {
+    scrollbar-width: auto;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-light);
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+  }
 }
 
 /* ===== Selection ===== */

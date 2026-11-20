@@ -40,7 +40,7 @@ function buildBranch<T>(entries: SpatialEntry<T>[]): SpatialBranch<T> {
   if (entries.length <= MAX_LEAF_ENTRIES) return { bounds, entries };
 
   const splitOnX = bounds.width >= bounds.height;
-  const sortedEntries = [...entries].sort((a, b) => {
+  const sortedEntries = entries.toSorted((a, b) => {
     const centerA = splitOnX
       ? a.bounds.minX + a.bounds.maxX
       : a.bounds.minY + a.bounds.maxY;
