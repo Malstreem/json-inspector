@@ -335,8 +335,11 @@ input {
   flex: 1;
   overflow: hidden;
   position: relative;
-  background: var(--bg-primary);
+  background-color: var(--bg-primary);
+  background-image: radial-gradient(circle, rgba(167, 139, 250, 0.16) 1px, transparent 1px);
+  background-size: 24px 24px;
   cursor: grab;
+  user-select: none;
 }
 
 .graph-viewport:active {
@@ -350,12 +353,17 @@ input {
 }
 
 #graph-group [role="button"]:focus-visible {
-  filter: drop-shadow(0 0 3px var(--accent));
+  filter: drop-shadow(0 0 4px var(--accent));
   outline: none;
 }
 
 #graph-group .graph-node {
   cursor: pointer;
+  transition: filter 0.15s ease-out;
+}
+
+#graph-group .graph-node:hover > rect:first-child {
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.6));
 }
 
 #graph-group .graph-node.is-selected > rect,
@@ -363,7 +371,23 @@ input {
 #graph-group .graph-node:focus-visible > rect,
 #graph-group .graph-node:focus-visible > g > rect {
   stroke: var(--accent);
-  stroke-width: 3;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.6));
+}
+
+#graph-group .graph-row:hover > rect.row-hover-bg {
+  fill: rgba(255, 255, 255, 0.06);
+}
+
+.graph-edge {
+  transition: stroke 0.2s, stroke-width 0.2s, opacity 0.2s;
+}
+
+.graph-edge:hover {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  opacity: 1;
+  filter: drop-shadow(0 0 6px var(--accent));
 }
 
 .graph-context-menu {

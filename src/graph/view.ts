@@ -54,6 +54,7 @@ export class GraphView {
     this.group.innerHTML = svg;
     if (updateGraphControls) {
       this.interactions.setFlatRows(this.flatRows);
+      this.interactions.setNodes(nodes);
       this.copyControls.setFlatRows(this.flatRows);
       this.copyControls.setNodes(nodes);
     }

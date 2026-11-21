@@ -17,25 +17,51 @@ const ROW_H = 26;
 const PAD_X = 14;
 const PAD_Y = 10;
 const BORDER_R = 10; // border radius
-const STROKE_W = 3;  // border width
+const STROKE_W = 1.5;  // border width
 
-/** Depth-based fill colors (dark theme, matching reference) */
+/** Depth-based fill colors (modern refined dark tones) */
 const DEPTH_COLORS = [
-  '#3d2b1f', // brown
-  '#1a1a40', // indigo
-  '#0d3b2e', // dark green
-  '#3b0d0d', // maroon
-  '#3b3b0d', // olive
-  '#2d0d3b', // purple
-  '#0d1f3b', // navy
+  '#1e1c2e', // Deep elevated violet
+  '#1a1f36', // Deep elevated indigo/navy
+  '#16242b', // Deep elevated teal/cyan
+  '#18261e', // Deep elevated emerald
+  '#272118', // Deep elevated amber
+  '#2b1824', // Deep elevated rose
+  '#22182b', // Deep elevated purple
 ];
 
-const STROKE_COLOR = '#c8b896'; // tan/beige border
-const TEXT_COLOR = '#e0ddd5';   // light text
-const KEY_COLOR = '#a0a0a0';    // dimmer key text
-const PILL_BG = '#2a2a3d';
-const EDGE_COLOR = '#555';
+/** Vibrant top accent stripe per depth */
+const DEPTH_ACCENTS = [
+  '#818cf8', // Indigo
+  '#a78bfa', // Violet
+  '#38bdf8', // Sky
+  '#34d399', // Emerald
+  '#fbbf24', // Amber
+  '#f472b6', // Pink
+  '#2dd4bf', // Teal
+];
+
+const STROKE_COLOR = 'rgba(255, 255, 255, 0.12)';
+const PILL_BG = '#28253d';
+const EDGE_COLOR = 'rgba(148, 163, 184, 0.4)';
 const HIGHLIGHT_COLOR = '#ffd700'; // search highlight
+
+// Syntax highlighting colors for graph row values
+const KEY_COLOR = '#f8fafc';    // Crisp bright white/slate for keys
+const STR_COLOR = '#34d399';    // Emerald green for strings
+const NUM_COLOR = '#fbbf24';    // Amber for numbers
+const BOOL_COLOR = '#f472b6';   // Pink for booleans
+const NULL_COLOR = '#94a3b8';   // Slate for null
+const BADGE_COLOR = '#818cf8';  // Indigo for [3 items] or {4 keys}
+
+function getValueColor(val: unknown, isExp: boolean): string {
+  if (isExp) return BADGE_COLOR;
+  if (val === null) return NULL_COLOR;
+  if (typeof val === 'string') return STR_COLOR;
+  if (typeof val === 'number') return NUM_COLOR;
+  if (typeof val === 'boolean') return BOOL_COLOR;
+  return '#e2e8f0';
+}
 
 /** Escape HTML entities */
 function esc(s: string): string {
@@ -62,10 +88,10 @@ function renderNode(
     const rowIndex = rowIndices.get(node.rows[0]);
     const isHighlighted = rowIndex !== undefined && highlightSet.has(rowIndex);
     const fill = isHighlighted ? HIGHLIGHT_COLOR : PILL_BG;
-    const textFill = isHighlighted ? '#000' : TEXT_COLOR;
+    const textFill = isHighlighted ? '#000' : getValueColor(node.rows[0].sourceValue, false);
     svg += `<g data-node-index="${nodeIndex}" class="graph-node" role="group" tabindex="0" aria-keyshortcuts="Control+C Control+Alt+C Meta+C Meta+Alt+C" aria-label="JSON node at ${esc(formatJsonPath(node.path))}">`;
     svg += `<g data-row-index="${rowIndex ?? -1}">`;
-    svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="13" ry="13" fill="${fill}" stroke="${STROKE_COLOR}" stroke-width="1.5"/>`;
+    svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="13" ry="13" fill="${fill}" stroke="${STROKE_COLOR}" stroke-width="${STROKE_W}"/>`;
     svg += `<text x="${node.x + node.width / 2}" y="${node.y + node.height / 2 + 5}" text-anchor="middle" fill="${textFill}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(node.rows[0].value)}</text>`;
     svg += '</g>';
     svg += '</g>';
@@ -74,8 +100,11 @@ function renderNode(
 
   // Card node: rounded rect with rows
   const fillColor = DEPTH_COLORS[node.depth % DEPTH_COLORS.length];
+  const accentColor = DEPTH_ACCENTS[node.depth % DEPTH_ACCENTS.length];
   svg += `<g data-node-index="${nodeIndex}" class="graph-node" role="group" tabindex="0" aria-keyshortcuts="Control+C Control+Alt+C Meta+C Meta+Alt+C" aria-label="JSON node at ${esc(formatJsonPath(node.path))}">`;
   svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="${BORDER_R}" ry="${BORDER_R}" fill="${fillColor}" stroke="${STROKE_COLOR}" stroke-width="${STROKE_W}"/>`;
+  // Sleek top accent line
+  svg += `<rect x="${node.x + 1}" y="${node.y + 1}" width="${node.width - 2}" height="3" rx="1.5" ry="1.5" fill="${accentColor}" opacity="0.85"/>`;
 
   // Render each row
   node.rows.forEach((row, ri) => {
@@ -83,12 +112,16 @@ function renderNode(
     const tx = node.x + PAD_X;
     const rowFlatIndex = rowIndices.get(row) ?? -1;
     const isHighlighted = highlightSet.has(rowFlatIndex);
+    const valColor = getValueColor(row.sourceValue, isExpandable(row));
 
     if (isExpandable(row)) {
-      svg += `<g data-row-index="${rowFlatIndex}" role="button" tabindex="0" aria-expanded="${Boolean(row.isExpanded)}" aria-label="${esc(`${row.isExpanded ? 'Collapse' : 'Expand'} ${formatRowLabel(row)}`)}" style="cursor:pointer">`;
+      svg += `<g data-row-index="${rowFlatIndex}" class="graph-row" role="button" tabindex="0" aria-expanded="${Boolean(row.isExpanded)}" aria-label="${esc(`${row.isExpanded ? 'Collapse' : 'Expand'} ${formatRowLabel(row)}`)}" style="cursor:pointer">`;
     } else {
-      svg += `<g data-row-index="${rowFlatIndex}">`;
+      svg += `<g data-row-index="${rowFlatIndex}" class="graph-row">`;
     }
+
+    // Row hover background rect
+    svg += `<rect class="row-hover-bg" x="${node.x + 2}" y="${ry - 3}" width="${node.width - 4}" height="${ROW_H}" rx="4" fill="transparent"/>`;
 
     // Highlight background
     if (isHighlighted) {
@@ -98,25 +131,26 @@ function renderNode(
     // Expand/collapse indicator for rows with children
     if (isExpandable(row)) {
       const arrow = row.isExpanded ? '▾' : '▸';
-      svg += `<text x="${tx - 2}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="12" font-family="'JetBrains Mono', monospace">${arrow}</text>`;
+      const arrowColor = row.isExpanded ? accentColor : '#94a3b8';
+      svg += `<text x="${tx - 2}" y="${ry + 16}" fill="${arrowColor}" font-size="12" font-family="'JetBrains Mono', monospace">${arrow}</text>`;
     }
 
     // Key text
     const keyOffset = isExpandable(row) ? 12 : 0;
     if (row.key !== null) {
-      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${KEY_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace">`;
+      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" font-size="13" font-family="'JetBrains Mono', monospace">`;
       svg += `<tspan fill="${KEY_COLOR}">${esc(`${row.key}: `)}</tspan>`;
-      svg += `<tspan fill="${TEXT_COLOR}">${esc(row.value)}</tspan>`;
+      svg += `<tspan fill="${valColor}">${esc(row.value)}</tspan>`;
       svg += `</text>`;
     } else {
-      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${TEXT_COLOR}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(row.value)}</text>`;
+      svg += `<text x="${tx + keyOffset}" y="${ry + 16}" fill="${valColor}" font-size="13" font-family="'JetBrains Mono', monospace">${esc(row.value)}</text>`;
     }
 
     // Connection dot for rows with children
     if (isExpandable(row) && row.isExpanded) {
       const dotX = node.x + node.width;
       const dotY = ry + ROW_H / 2 + 3;
-      svg += `<circle cx="${dotX}" cy="${dotY}" r="4" fill="${STROKE_COLOR}"/>`;
+      svg += `<circle cx="${dotX}" cy="${dotY}" r="3.5" fill="${accentColor}"/>`;
     }
     svg += '</g>';
   });
@@ -142,7 +176,7 @@ function renderEdge(
   const cp1x = x1 + cpOffset;
   const cp2x = x2 - cpOffset;
 
-  return `<path d="M${x1},${y1} C${cp1x},${y1} ${cp2x},${y2} ${x2},${y2}" fill="none" stroke="${EDGE_COLOR}" stroke-width="1.5" opacity="0.6"/>`;
+  return `<path class="graph-edge" d="M${x1},${y1} C${cp1x},${y1} ${cp2x},${y2} ${x2},${y2}" fill="none" stroke="${EDGE_COLOR}" stroke-width="1.5"/>`;
 }
 
 function formatRowLabel(row: Row): string {

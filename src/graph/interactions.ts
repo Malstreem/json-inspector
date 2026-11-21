@@ -28,6 +28,7 @@ export class GraphInteractions {
   private readonly onToggleRow: (row: Row) => void;
   private readonly onViewportChange: () => void;
   private flatRows: FlatRow[] = [];
+  private nodes: GraphNode[] = [];
   private readonly eventController = new AbortController();
   private readonly resizeObserver: ResizeObserver;
   private viewportFrame: number | null = null;
@@ -52,6 +53,10 @@ export class GraphInteractions {
     this.flatRows = rows;
   }
 
+  setNodes(nodes: GraphNode[]): void {
+    this.nodes = nodes;
+  }
+
   private bindEvents(): void {
     const { signal } = this.eventController;
 
@@ -65,6 +70,7 @@ export class GraphInteractions {
 
     // Click (event delegation for row toggles)
     this.svg.addEventListener('click', this.onClick, { signal });
+    this.svg.addEventListener('dblclick', this.onDoubleClick, { signal });
     this.svg.addEventListener('keydown', this.onKeyDown, { signal });
 
     // Touch support
@@ -117,6 +123,16 @@ export class GraphInteractions {
     this.toggleRowAtElement(rowEl, false);
   };
 
+  private onDoubleClick = (e: MouseEvent): void => {
+    if (!(e.target instanceof Element)) return;
+    const nodeEl = e.target.closest<SVGGElement>('[data-node-index]');
+    if (!nodeEl) return;
+    const index = Number(nodeEl.dataset.nodeIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= this.nodes.length) return;
+    const node = this.nodes[index];
+    if (node) this.centerOnNode(node);
+  };
+
   private onKeyDown = (e: KeyboardEvent): void => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (!(e.target instanceof Element)) return;
@@ -166,6 +182,12 @@ export class GraphInteractions {
       'transform',
       `translate(${this.state.panX}, ${this.state.panY}) scale(${this.state.zoom})`
     );
+    const parent = this.svg.parentElement;
+    if (parent) {
+      const gridSize = Math.max(12, Math.min(96, Math.round(24 * this.state.zoom)));
+      parent.style.backgroundPosition = `${this.state.panX}px ${this.state.panY}px`;
+      parent.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+    }
     this.scheduleViewportChange();
   }
 
