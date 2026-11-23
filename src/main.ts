@@ -49,6 +49,10 @@ function init(): () => void {
   const editorContainer = requireElement<HTMLDivElement>('#editor-container');
   const fileInput = requireElement<HTMLInputElement>('#file-input');
   const searchInput = requireElement<HTMLInputElement>('#search-input');
+  const searchCounter = requireElement<HTMLElement>('#search-counter');
+  const btnSearchPrev = requireElement<HTMLButtonElement>('#btn-search-prev');
+  const btnSearchNext = requireElement<HTMLButtonElement>('#btn-search-next');
+  const btnSearchFilter = requireElement<HTMLButtonElement>('#btn-search-filter');
   const dropOverlay = requireElement<HTMLDivElement>('#drop-overlay');
   const helpDialog = document.querySelector<HTMLDialogElement>('#help-dialog');
   const btnHelp = document.querySelector<HTMLButtonElement>('#btn-help');
@@ -137,6 +141,17 @@ function init(): () => void {
     onError: (message) => {
       if (message === null) clearError();
       else setError(message);
+    },
+    onSearchMatchChange: (current, total) => {
+      if (total === 0) {
+        searchCounter.textContent = searchInput.value ? '0/0' : '';
+        btnSearchPrev.hidden = true;
+        btnSearchNext.hidden = true;
+      } else {
+        searchCounter.textContent = `${current}/${total}`;
+        btnSearchPrev.hidden = false;
+        btnSearchNext.hidden = false;
+      }
     },
   });
 
@@ -244,13 +259,30 @@ function init(): () => void {
       event.preventDefault();
       if (searchTimer) clearTimeout(searchTimer);
       searchTimer = null;
-      controller.nextSearchMatch(searchInput.value);
+      if (event.shiftKey) {
+        controller.prevSearchMatch(searchInput.value);
+      } else {
+        controller.nextSearchMatch(searchInput.value);
+      }
     } else if (event.key === 'Escape') {
       if (searchTimer) clearTimeout(searchTimer);
       searchTimer = null;
       searchInput.value = '';
       controller.search('');
     }
+  }, { signal });
+
+  btnSearchPrev.addEventListener('click', () => {
+    controller.prevSearchMatch(searchInput.value);
+  }, { signal });
+
+  btnSearchNext.addEventListener('click', () => {
+    controller.nextSearchMatch(searchInput.value);
+  }, { signal });
+
+  btnSearchFilter.addEventListener('click', () => {
+    const isFiltered = controller.toggleFilterMode();
+    btnSearchFilter.setAttribute('aria-pressed', String(isFiltered));
   }, { signal });
 
   if (helpDialog && btnHelp && !('commandForElement' in HTMLButtonElement.prototype)) {

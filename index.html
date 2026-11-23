@@ -29,6 +29,16 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input type="text" id="search-input" placeholder="Search nodes…" aria-label="Search nodes" />
+            <span id="search-counter" class="search-counter" aria-live="polite"></span>
+            <button class="search-nav-btn" type="button" id="btn-search-prev" title="Previous match (Shift+Enter)" aria-label="Previous match" hidden>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
+            <button class="search-nav-btn" type="button" id="btn-search-next" title="Next match (Enter)" aria-label="Next match" hidden>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <button class="search-nav-btn" type="button" id="btn-search-filter" title="Toggle dim non-matching nodes" aria-label="Toggle filter mode" aria-pressed="false">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polyline></svg>
+            </button>
           </div>
         </div>
         <div class="toolbar-right">

@@ -13,7 +13,12 @@ import {
 } from '../workers/json-processing-client';
 
 export interface GraphViewPort {
-  render(root: GraphNode, highlightIndices: Set<number>, flatRows: FlatRow[]): void;
+  render(
+    root: GraphNode,
+    highlightIndices: Set<number>,
+    flatRows: FlatRow[],
+    isFilterMode?: boolean
+  ): void;
   clear(): void;
   fitToView(root: GraphNode): void;
   centerOnNode(node: GraphNode): void;
@@ -23,6 +28,7 @@ export interface InspectorStatus {
   onNodeCount: (count: number) => void;
   onProcessingTime: (milliseconds: number) => void;
   onError: (message: string | null) => void;
+  onSearchMatchChange?: (current: number, total: number) => void;
 }
 
 export class InspectorController {
@@ -31,6 +37,7 @@ export class InspectorController {
   private matches: number[] = [];
   private matchIndex = 0;
   private searchQuery = '';
+  private filterMode = false;
   private documentRevision = 0;
   private readonly graphView: GraphViewPort;
   private readonly status: InspectorStatus;
@@ -107,10 +114,15 @@ export class InspectorController {
     this.matchIndex = 0;
     if (!this.root) {
       this.matches = [];
+      this.status.onSearchMatchChange?.(0, 0);
       return;
     }
 
     this.refresh();
+    this.status.onSearchMatchChange?.(
+      this.matches.length > 0 ? this.matchIndex + 1 : 0,
+      this.matches.length
+    );
     this.centerOnCurrentMatch();
   }
 
@@ -122,7 +134,35 @@ export class InspectorController {
 
     if (this.matches.length === 0) return;
     this.matchIndex = (this.matchIndex + 1) % this.matches.length;
+    this.status.onSearchMatchChange?.(this.matchIndex + 1, this.matches.length);
     this.centerOnCurrentMatch();
+  }
+
+  prevSearchMatch(query: string): void {
+    if (query !== this.searchQuery) {
+      this.search(query);
+      return;
+    }
+
+    if (this.matches.length === 0) return;
+    this.matchIndex = (this.matchIndex - 1 + this.matches.length) % this.matches.length;
+    this.status.onSearchMatchChange?.(this.matchIndex + 1, this.matches.length);
+    this.centerOnCurrentMatch();
+  }
+
+  toggleFilterMode(): boolean {
+    this.filterMode = !this.filterMode;
+    this.refresh();
+    return this.filterMode;
+  }
+
+  setFilterMode(enabled: boolean): void {
+    this.filterMode = enabled;
+    this.refresh();
+  }
+
+  isFilterMode(): boolean {
+    return this.filterMode;
   }
 
   collapseAll(): void {
@@ -181,7 +221,7 @@ export class InspectorController {
     this.matchIndex = this.matches.length
       ? this.matchIndex % this.matches.length
       : 0;
-    this.graphView.render(this.root, new Set(this.matches), this.flatRows);
+    this.graphView.render(this.root, new Set(this.matches), this.flatRows, this.filterMode);
   }
 
   getRoot(): GraphNode | null {

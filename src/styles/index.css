@@ -99,7 +99,7 @@ input {
 
 .toolbar-center {
   flex: 1;
-  max-width: 320px;
+  max-width: 360px;
 }
 
 .logo {
@@ -142,6 +142,44 @@ input {
 
 .search-box input::placeholder {
   color: var(--text-muted);
+}
+
+.search-counter {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.search-nav-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.search-nav-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.search-nav-btn[aria-pressed="true"] {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+#graph-group .graph-node.is-dimmed {
+  opacity: 0.15;
+  filter: grayscale(0.9);
+  pointer-events: none;
+}
+
+#graph-group .graph-edge.is-dimmed {
+  opacity: 0.08;
 }
 
 .icon-btn {

@@ -17,6 +17,7 @@ export class GraphView {
   private highlightIndices = new Set<number>();
   private flatRows: FlatRow[] = [];
   private graphIndex: GraphRenderIndex | null = null;
+  private isFilterMode = false;
 
   constructor(
     svg: SVGSVGElement,
@@ -36,10 +37,16 @@ export class GraphView {
     this.copyControls = new GraphCopyControls(svg, onCopyStatus);
   }
 
-  render(root: GraphNode, highlightIndices: Set<number>, flatRows: FlatRow[]): void {
+  render(
+    root: GraphNode,
+    highlightIndices: Set<number>,
+    flatRows: FlatRow[],
+    isFilterMode = false
+  ): void {
     this.root = root;
     this.highlightIndices = highlightIndices;
     this.flatRows = flatRows;
+    this.isFilterMode = isFilterMode;
     layoutNode(root, 0, 0, 0);
     this.graphIndex = createGraphRenderIndex(root);
     this.renderViewport(true);
@@ -52,7 +59,8 @@ export class GraphView {
       this.highlightIndices,
       this.flatRows,
       this.interactions.getVisibleBounds(),
-      this.graphIndex
+      this.graphIndex,
+      this.isFilterMode
     );
     this.group.innerHTML = svg;
     if (updateGraphControls) {
