@@ -90,6 +90,19 @@
         </section>
       </main>
 
+      <!-- Drop Overlay -->
+      <div id="drop-overlay" class="drop-overlay" hidden>
+        <div class="drop-overlay-content">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <div class="drop-overlay-title">Drop JSON file here</div>
+          <div class="drop-overlay-subtitle">Drop to inspect document immediately</div>
+        </div>
+      </div>
+
       <!-- Status bar -->
       <footer class="status-bar" role="status">
         <div class="status-left">
@@ -129,6 +142,8 @@
             <div class="shortcut-row"><kbd>Right Click</kbd> <span>Open copy context menu</span></div>
             <div class="shortcut-row"><kbd data-platform-mod>Ctrl</kbd> + <kbd>C</kbd> <span>Copy selected node as JSON</span></div>
             <div class="shortcut-row"><kbd data-platform-mod>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>C</kbd> <span>Copy selected node JSON path</span></div>
+            <div class="shortcut-row"><kbd data-platform-mod>Ctrl</kbd> + <kbd>V</kbd> <span>Paste JSON anywhere to load</span></div>
+            <div class="shortcut-row"><span>Drag & Drop</span> <span>Drop .json file anywhere</span></div>
             <div class="shortcut-row"><kbd>Scroll</kbd> / <kbd>Drag</kbd> <span>Zoom & Pan graph</span></div>
           </section>
         </div>

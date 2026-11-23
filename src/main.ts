@@ -12,6 +12,7 @@ import {
   setError,
 } from './ui/status-bar';
 import { initPaneResizer } from './ui/pane-resizer';
+import { initFileDropAndPaste } from './ui/drop-overlay';
 import { getSampleJSON } from './data/sample';
 
 /**
@@ -45,6 +46,7 @@ function init(): () => void {
   const editorContainer = requireElement<HTMLDivElement>('#editor-container');
   const fileInput = requireElement<HTMLInputElement>('#file-input');
   const searchInput = requireElement<HTMLInputElement>('#search-input');
+  const dropOverlay = requireElement<HTMLDivElement>('#drop-overlay');
   const helpDialog = document.querySelector<HTMLDialogElement>('#help-dialog');
   const btnHelp = document.querySelector<HTMLButtonElement>('#btn-help');
   const buttons = {
@@ -92,6 +94,22 @@ function init(): () => void {
 
   void updateDocument(initialJson).then(() => {
     if (!isDestroyed && editor.getValue() === initialJson) controller.fitToView();
+  });
+
+  const destroyDropAndPaste = initFileDropAndPaste(dropOverlay, {
+    onJsonLoaded: (content, sourceName) => {
+      if (isDestroyed) return;
+      editor.setValue(content);
+      void updateDocument(content).then(() => {
+        if (!isDestroyed) {
+          controller.fitToView();
+          setCopyStatus(`Loaded from ${sourceName}`, false);
+        }
+      });
+    },
+    onError: (message) => {
+      if (!isDestroyed) setError(message);
+    },
   });
 
   buttons.format.addEventListener('click', () => {
@@ -216,6 +234,7 @@ function init(): () => void {
     graphView.destroy();
     controller.destroy();
     destroyPaneResizer();
+    destroyDropAndPaste();
   };
 }
 
