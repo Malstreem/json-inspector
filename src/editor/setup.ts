@@ -9,6 +9,8 @@ import { bracketMatching, foldGutter, foldKeymap, syntaxHighlighting, defaultHig
 import { linter, lintGutter } from '@codemirror/lint';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
+import { findPathRange, findPathAtOffset } from './path-locator';
+import type { JsonPath } from '../json/types';
 
 /** Dark theme matching the JSON Inspector design */
 const inspectorTheme = EditorView.theme({
@@ -90,23 +92,40 @@ const baseTheme = EditorView.baseTheme({
 export interface EditorInstance {
   getValue: () => string;
   setValue: (content: string) => void;
+  selectPath: (path: JsonPath) => boolean;
   destroy: () => void;
+}
+
+export interface EditorOptions {
+  initialContent: string;
+  onChange: (content: string) => void;
+  onCursorPath?: (path: JsonPath) => void;
 }
 
 /**
  * Create and mount a CodeMirror 6 editor.
  * @param container - DOM element to mount the editor in
- * @param initialContent - Initial text content
- * @param onChange - Callback fired on content changes (debounced externally)
+ * @param initialContentOrOptions - Initial text content or options object
+ * @param onChangeCb - Callback fired on content changes (when passing content directly)
  */
 export function createEditor(
   container: HTMLElement,
-  initialContent: string,
-  onChange: (content: string) => void
+  initialContentOrOptions: string | EditorOptions,
+  onChangeCb?: (content: string) => void
 ): EditorInstance {
+  const options: EditorOptions =
+    typeof initialContentOrOptions === 'string'
+      ? { initialContent: initialContentOrOptions, onChange: onChangeCb! }
+      : initialContentOrOptions;
+
   const updateListener = EditorView.updateListener.of((update) => {
     if (update.docChanged) {
-      onChange(update.state.doc.toString());
+      options.onChange(update.state.doc.toString());
+    }
+    if (options.onCursorPath && (update.selectionSet || update.docChanged)) {
+      const pos = update.state.selection.main.head;
+      const path = findPathAtOffset(update.state, pos);
+      options.onCursorPath(path);
     }
   });
 
@@ -159,6 +178,15 @@ export function createEditor(
           insert: content,
         },
       });
+    },
+    selectPath: (path: JsonPath): boolean => {
+      const range = findPathRange(view.state, path);
+      if (!range) return false;
+      view.dispatch({
+        selection: { anchor: range.from, head: range.to },
+        effects: EditorView.scrollIntoView(range.from, { y: 'center' }),
+      });
+      return true;
     },
     destroy: () => view.destroy(),
   };

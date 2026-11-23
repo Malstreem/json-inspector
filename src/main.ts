@@ -67,7 +67,10 @@ function init(): () => void {
     requireElement<SVGSVGElement>('#graph-svg'),
     requireElement<SVGGElement>('#graph-group'),
     () => controller.refresh(),
-    setCopyStatus
+    setCopyStatus,
+    (path) => {
+      if (!isDestroyed) editor.selectPath(path);
+    }
   );
   controller = new InspectorController(graphView, {
     onNodeCount: setNodeCount,
@@ -79,10 +82,21 @@ function init(): () => void {
   });
 
   let documentTimer: ReturnType<typeof setTimeout> | null = null;
-  const editor = createEditor(editorContainer, initialJson, (source) => {
-    controller.invalidatePendingRequests();
-    if (documentTimer) clearTimeout(documentTimer);
-    documentTimer = setTimeout(() => updateDocument(source), 200);
+  let cursorPathTimer: ReturnType<typeof setTimeout> | null = null;
+  const editor = createEditor(editorContainer, {
+    initialContent: initialJson,
+    onChange: (source) => {
+      controller.invalidatePendingRequests();
+      if (documentTimer) clearTimeout(documentTimer);
+      documentTimer = setTimeout(() => updateDocument(source), 200);
+    },
+    onCursorPath: (path) => {
+      if (isDestroyed) return;
+      if (cursorPathTimer) clearTimeout(cursorPathTimer);
+      cursorPathTimer = setTimeout(() => {
+        controller.highlightPath(path);
+      }, 250);
+    },
   });
   let isDestroyed = false;
 
@@ -229,6 +243,7 @@ function init(): () => void {
     isDestroyed = true;
     appEvents.abort();
     if (documentTimer) clearTimeout(documentTimer);
+    if (cursorPathTimer) clearTimeout(cursorPathTimer);
     if (searchTimer) clearTimeout(searchTimer);
     editor.destroy();
     graphView.destroy();

@@ -5,6 +5,7 @@ import {
   type GraphNode,
   type FlatRow,
 } from '../graph/projection';
+import type { JsonPath } from '../json/types';
 import { searchNodes } from '../graph/search';
 import {
   JsonProcessingWorker,
@@ -139,6 +140,37 @@ export class InspectorController {
 
   fitToView(): void {
     if (this.root) this.graphView.fitToView(this.root);
+  }
+
+  highlightPath(path: JsonPath): void {
+    if (!this.root || path.length === 0) return;
+    let bestIndex = -1;
+    let maxMatchLen = 0;
+
+    for (let i = 0; i < this.flatRows.length; i++) {
+      const fr = this.flatRows[i];
+      let matchLen = 0;
+      for (let j = 0; j < Math.min(fr.path.length, path.length); j++) {
+        if (String(fr.path[j]) === String(path[j])) {
+          matchLen++;
+        } else {
+          break;
+        }
+      }
+      if (matchLen > maxMatchLen || (matchLen === path.length && fr.path.length === path.length)) {
+        maxMatchLen = matchLen;
+        bestIndex = i;
+        if (matchLen === path.length && fr.path.length === path.length) break;
+      }
+    }
+
+    if (bestIndex !== -1 && !this.searchQuery) {
+      this.matches = [bestIndex];
+      this.matchIndex = 0;
+      this.graphView.render(this.root, new Set(this.matches), this.flatRows);
+      const row = this.flatRows[bestIndex];
+      if (row) this.graphView.centerOnNode(row.node);
+    }
   }
 
   refresh(): void {

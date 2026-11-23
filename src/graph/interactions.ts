@@ -7,6 +7,7 @@ import {
   type FlatRow,
   type Row,
 } from './projection';
+import type { JsonPath } from '../json/types';
 import type { BoundingBox } from './layout';
 
 export interface ViewportState {
@@ -27,6 +28,7 @@ export class GraphInteractions {
   private panStart = { x: 0, y: 0 };
   private readonly onToggleRow: (row: Row) => void;
   private readonly onViewportChange: () => void;
+  private readonly onSelectPath?: (path: JsonPath) => void;
   private flatRows: FlatRow[] = [];
   private nodes: GraphNode[] = [];
   private readonly eventController = new AbortController();
@@ -37,12 +39,14 @@ export class GraphInteractions {
     svg: SVGSVGElement,
     group: SVGGElement,
     onToggleRow: (row: Row) => void,
-    onViewportChange: () => void
+    onViewportChange: () => void,
+    onSelectPath?: (path: JsonPath) => void
   ) {
     this.svg = svg;
     this.group = group;
     this.onToggleRow = onToggleRow;
     this.onViewportChange = onViewportChange;
+    this.onSelectPath = onSelectPath;
     this.resizeObserver = new ResizeObserver(() => this.scheduleViewportChange());
     this.resizeObserver.observe(svg);
     this.bindEvents();
@@ -118,9 +122,24 @@ export class GraphInteractions {
     if (!(e.target instanceof Element)) return;
     const target = e.target;
     const rowEl = target.closest('[data-row-index]');
-    if (!rowEl) return;
+    if (rowEl) {
+      const index = Number(rowEl.getAttribute('data-row-index'));
+      if (Number.isInteger(index) && index >= 0 && index < this.flatRows.length) {
+        const fr = this.flatRows[index];
+        this.onSelectPath?.(fr.path);
+      }
+      this.toggleRowAtElement(rowEl, false);
+      return;
+    }
 
-    this.toggleRowAtElement(rowEl, false);
+    const nodeEl = target.closest<SVGGElement>('[data-node-index]');
+    if (nodeEl) {
+      const index = Number(nodeEl.dataset.nodeIndex);
+      if (Number.isInteger(index) && index >= 0 && index < this.nodes.length) {
+        const node = this.nodes[index];
+        if (node) this.onSelectPath?.(node.path);
+      }
+    }
   };
 
   private onDoubleClick = (e: MouseEvent): void => {

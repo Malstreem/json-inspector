@@ -1,6 +1,7 @@
 import { GraphInteractions } from './interactions';
 import { GraphCopyControls } from './copy-controls';
 import type { FlatRow, GraphNode } from './projection';
+import type { JsonPath } from '../json/types';
 import { computeBounds, layoutNode } from './layout';
 import {
   createGraphRenderIndex,
@@ -21,14 +22,16 @@ export class GraphView {
     svg: SVGSVGElement,
     group: SVGGElement,
     onRowToggle: () => void,
-    onCopyStatus: (message: string, isError: boolean) => void
+    onCopyStatus: (message: string, isError: boolean) => void,
+    onSelectPath?: (path: JsonPath) => void
   ) {
     this.group = group;
     this.interactions = new GraphInteractions(
       svg,
       group,
       onRowToggle,
-      () => this.renderViewport()
+      () => this.renderViewport(),
+      onSelectPath
     );
     this.copyControls = new GraphCopyControls(svg, onCopyStatus);
   }
