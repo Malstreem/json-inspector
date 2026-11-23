@@ -1,4 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#1a1625"/>
-  <text x="16" y="22" font-family="monospace" font-size="18" font-weight="bold" fill="#a78bfa" text-anchor="middle">{}</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1832" />
+      <stop offset="50%" stop-color="#141122" />
+      <stop offset="100%" stop-color="#0c0a14" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#6366f1" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.3" />
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0e7ff" />
+      <stop offset="50%" stop-color="#c4b5fd" />
+      <stop offset="100%" stop-color="#a78bfa" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.28" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background card -->
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="url(#bgGrad)" stroke="url(#glowGrad)" stroke-width="1" />
+
+  <!-- Graph node connections (subtle) -->
+  <line x1="7.04" y1="8" x2="24.96" y2="8" stroke="#818cf8" stroke-width="1" stroke-opacity="0.25" stroke-dasharray="1.28 1.28" />
+  <circle cx="7.04" cy="8" r="2" fill="#818cf8" opacity="0.6" />
+  <circle cx="24.96" cy="8" r="2" fill="#38bdf8" opacity="0.6" />
+  <circle cx="16" cy="25.6" r="2" fill="#a78bfa" opacity="0.6" />
+
+  <!-- Main { } symbol -->
+  <text x="16" y="21.95"
+    font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'JetBrains Mono', Consolas, monospace"
+    font-size="17"
+    font-weight="800"
+    fill="url(#textGrad)"
+    text-anchor="middle"
+    letter-spacing="-0.64px"
+    filter="url(#glow)">{ }</text>
 </svg>

@@ -129,7 +129,11 @@ export function findPathAtOffset(state: EditorState, pos: number): JsonPath {
     } else if (parent.name === 'Array') {
       if (node.name !== '[' && node.name !== ']' && node.name !== ',') {
         let index = 0;
-        for (let sibling = parent.firstChild; sibling && sibling !== node; sibling = sibling.nextSibling) {
+        for (
+          let sibling = parent.firstChild;
+          sibling && sibling.from < node.from;
+          sibling = sibling.nextSibling
+        ) {
           if (
             sibling.name !== '[' &&
             sibling.name !== ']' &&

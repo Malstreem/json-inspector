@@ -13,6 +13,7 @@ import {
 } from './ui/status-bar';
 import { initPaneResizer } from './ui/pane-resizer';
 import { initFileDropAndPaste } from './ui/drop-overlay';
+import { BreadcrumbsView } from './ui/breadcrumbs';
 import { getSampleJSON } from './data/sample';
 
 /**
@@ -62,6 +63,18 @@ function init(): () => void {
   };
   const initialJson = getSampleJSON();
 
+  const breadcrumbBar = requireElement<HTMLElement>('#breadcrumb-bar');
+  const btnCopyBreadcrumb = document.querySelector<HTMLButtonElement>('#btn-copy-breadcrumb');
+  const breadcrumbs = new BreadcrumbsView(breadcrumbBar, btnCopyBreadcrumb, {
+    onNavigatePath: (path) => {
+      if (isDestroyed) return;
+      editor.selectPath(path);
+      controller.highlightPath(path);
+      breadcrumbs.setPath(path);
+    },
+    onCopyStatus: setCopyStatus,
+  });
+
   let controller: InspectorController;
   const graphView = new GraphView(
     requireElement<SVGSVGElement>('#graph-svg'),
@@ -69,7 +82,10 @@ function init(): () => void {
     () => controller.refresh(),
     setCopyStatus,
     (path) => {
-      if (!isDestroyed) editor.selectPath(path);
+      if (!isDestroyed) {
+        editor.selectPath(path);
+        breadcrumbs.setPath(path);
+      }
     }
   );
   controller = new InspectorController(graphView, {
@@ -95,6 +111,7 @@ function init(): () => void {
       if (cursorPathTimer) clearTimeout(cursorPathTimer);
       cursorPathTimer = setTimeout(() => {
         controller.highlightPath(path);
+        breadcrumbs.setPath(path);
       }, 250);
     },
   });

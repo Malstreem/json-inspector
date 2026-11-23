@@ -159,7 +159,7 @@ export function createEditor(
   ];
 
   const state = EditorState.create({
-    doc: initialContent,
+    doc: options.initialContent,
     extensions,
   });
 

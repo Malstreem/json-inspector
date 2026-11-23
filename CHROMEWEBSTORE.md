@@ -87,10 +87,13 @@ JSON Inspector is committed to protecting your privacy.
 
 ---
 
-## 5. Required Assets
+## 5. Ready-to-Upload Assets
 
-| Asset | Size | Requirement |
-| :--- | :--- | :--- |
-| **Store Icon** | 128×128 px PNG | Required |
-| **Screenshot** | 1280×800 or 640×400 px PNG | At least 1 required (use `public/example-overview.png`) |
-| **Small Tile** (optional) | 440×280 px PNG | Recommended for store promo |
+All visual assets have been generated and sized strictly to Chrome Web Store specifications:
+
+| Asset | File | Size | Requirement |
+| :--- | :--- | :--- | :--- |
+| **Store Icon** | [`public/icons/icon-128.png`](public/icons/icon-128.png) | 128×128 px PNG | **Required** |
+| **Screenshot #1** | [`public/screenshot-1280x800.png`](public/screenshot-1280x800.png) | 1280×800 px PNG | **Required** (Exact 16:10 store ratio) |
+| **Small Promo Tile** | [`public/promo-tile-440x280.png`](public/promo-tile-440x280.png) | 440×280 px PNG | Recommended for store search cards |
+| **Package ZIP** | [`json-inspector-extension.zip`](json-inspector-extension.zip) | Flat root ZIP | Upload in Developer Dashboard |
