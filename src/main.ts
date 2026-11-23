@@ -15,6 +15,7 @@ import { initPaneResizer } from './ui/pane-resizer';
 import { initFileDropAndPaste } from './ui/drop-overlay';
 import { BreadcrumbsView } from './ui/breadcrumbs';
 import { TypesDialogView } from './ui/types-dialog';
+import { FetchDialogView } from './ui/fetch-dialog';
 import { getSampleJSON } from './data/sample';
 
 /**
@@ -62,6 +63,7 @@ function init(): () => void {
     zoomOut: requireElement<HTMLButtonElement>('#btn-zoom-out'),
     export: requireElement<HTMLButtonElement>('#btn-export'),
     types: requireElement<HTMLButtonElement>('#btn-types'),
+    fetch: requireElement<HTMLButtonElement>('#btn-fetch'),
   };
   const initialJson = getSampleJSON();
 
@@ -76,6 +78,32 @@ function init(): () => void {
     },
     () => editor.getValue(),
     setCopyStatus
+  );
+
+  const fetchDialog = new FetchDialogView(
+    {
+      dialog: requireElement<HTMLDialogElement>('#fetch-dialog'),
+      urlInput: requireElement<HTMLInputElement>('#fetch-url-input'),
+      presetButtons: document.querySelectorAll<HTMLButtonElement>('.preset-tag'),
+      btnSubmit: requireElement<HTMLButtonElement>('#btn-submit-fetch'),
+      btnClose: requireElement<HTMLButtonElement>('#btn-close-fetch'),
+      statusEl: requireElement<HTMLElement>('#fetch-status'),
+    },
+    {
+      onLoaded: (content, sourceName) => {
+        if (isDestroyed) return;
+        editor.setValue(content);
+        void updateDocument(content).then(() => {
+          if (!isDestroyed) {
+            controller.fitToView();
+            setCopyStatus(`Fetched from ${sourceName}`, false);
+          }
+        });
+      },
+      onError: (message) => {
+        if (!isDestroyed) setError(message);
+      },
+    }
   );
 
   const breadcrumbBar = requireElement<HTMLElement>('#breadcrumb-bar');
@@ -201,6 +229,7 @@ function init(): () => void {
     if (root) downloadGraphSvg(root);
   }, { signal });
   buttons.types.addEventListener('click', () => typesDialog.show(), { signal });
+  buttons.fetch.addEventListener('click', () => fetchDialog.show(), { signal });
 
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
   searchInput.addEventListener('input', () => {

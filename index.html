@@ -71,6 +71,7 @@
               <button class="text-btn" type="button" id="btn-format" title="Format JSON">Format</button>
               <button class="text-btn" type="button" id="btn-sample" title="Load sample data">Sample</button>
               <button class="text-btn" type="button" id="btn-open" title="Open file">Open</button>
+              <button class="text-btn" type="button" id="btn-fetch" title="Fetch JSON from URL or API">Fetch</button>
               <input type="file" id="file-input" accept=".json,.geojson" hidden />
             </div>
           </div>
@@ -187,6 +188,38 @@
         </div>
         <div class="types-dialog-footer">
           <button type="button" class="action-btn" id="btn-copy-types">Copy TypeScript</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Fetch from URL Dialog -->
+    <dialog id="fetch-dialog" class="help-dialog fetch-dialog" aria-labelledby="fetch-dialog-title" closedby="any">
+      <div class="help-dialog-content">
+        <header class="help-dialog-header">
+          <h2 id="fetch-dialog-title">Fetch JSON from URL</h2>
+          <form method="dialog">
+            <button class="icon-btn" type="submit" id="btn-close-fetch" aria-label="Close dialog">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+        </header>
+        <div class="fetch-dialog-body">
+          <label class="fetch-input-label" for="fetch-url-input">
+            Endpoint URL
+          </label>
+          <div class="fetch-input-row">
+            <input type="url" id="fetch-url-input" placeholder="https://api.example.com/data.json" />
+            <button type="button" class="action-btn" id="btn-submit-fetch">Fetch</button>
+          </div>
+          <div class="fetch-presets">
+            <span class="fetch-presets-title">Quick Presets:</span>
+            <div class="fetch-preset-tags">
+              <button type="button" class="preset-tag" data-url="https://api.github.com/users/octocat">GitHub User</button>
+              <button type="button" class="preset-tag" data-url="https://jsonplaceholder.typicode.com/posts/1">Post #1</button>
+              <button type="button" class="preset-tag" data-url="https://httpbin.org/get">HTTPBin Get</button>
+            </div>
+          </div>
+          <div id="fetch-status" class="fetch-status" aria-live="polite"></div>
         </div>
       </div>
     </dialog>

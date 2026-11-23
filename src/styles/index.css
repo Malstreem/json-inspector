@@ -853,3 +853,84 @@ input {
 .action-btn:hover {
   background: var(--accent-hover);
 }
+
+/* ===== Fetch Dialog ===== */
+.fetch-dialog {
+  max-width: 520px;
+}
+
+.fetch-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fetch-input-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.fetch-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.fetch-input-row input {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast);
+}
+
+.fetch-input-row input:focus {
+  border-color: var(--accent);
+}
+
+.fetch-presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.fetch-presets-title {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.fetch-preset-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.preset-tag {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  transition: all var(--transition-fast);
+}
+
+.preset-tag:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fetch-status {
+  min-height: 20px;
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.fetch-status.is-error {
+  color: var(--error);
+}
