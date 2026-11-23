@@ -16,6 +16,7 @@ import { initFileDropAndPaste } from './ui/drop-overlay';
 import { BreadcrumbsView } from './ui/breadcrumbs';
 import { TypesDialogView } from './ui/types-dialog';
 import { FetchDialogView } from './ui/fetch-dialog';
+import { createShareUrl, getJsonFromHash } from './files/url-share';
 import { getSampleJSON } from './data/sample';
 
 /**
@@ -68,8 +69,10 @@ function init(): () => void {
     export: requireElement<HTMLButtonElement>('#btn-export'),
     types: requireElement<HTMLButtonElement>('#btn-types'),
     fetch: requireElement<HTMLButtonElement>('#btn-fetch'),
+    share: requireElement<HTMLButtonElement>('#btn-share'),
   };
-  const initialJson = getSampleJSON();
+  const hashJson = getJsonFromHash();
+  const initialJson = hashJson ?? getSampleJSON();
 
   const typesDialog = new TypesDialogView(
     {
@@ -182,7 +185,12 @@ function init(): () => void {
   }
 
   void updateDocument(initialJson).then(() => {
-    if (!isDestroyed && editor.getValue() === initialJson) controller.fitToView();
+    if (!isDestroyed && editor.getValue() === initialJson) {
+      controller.fitToView();
+      if (hashJson) {
+        setCopyStatus('Loaded JSON from shared link', false);
+      }
+    }
   });
 
   const destroyDropAndPaste = initFileDropAndPaste(dropOverlay, {
@@ -245,6 +253,23 @@ function init(): () => void {
   }, { signal });
   buttons.types.addEventListener('click', () => typesDialog.show(), { signal });
   buttons.fetch.addEventListener('click', () => fetchDialog.show(), { signal });
+  buttons.share.addEventListener('click', () => {
+    const content = editor.getValue();
+    const result = createShareUrl(content);
+    if (result.isTooLarge) {
+      setError('Document is too large to share via URL link (>64 KB).');
+      return;
+    }
+    navigator.clipboard
+      .writeText(result.url)
+      .then(() => {
+        history.replaceState(null, '', result.url);
+        setCopyStatus('Share link copied to clipboard!', false);
+      })
+      .catch(() => {
+        setError('Failed to copy share link');
+      });
+  }, { signal });
 
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
   searchInput.addEventListener('input', () => {
