@@ -52,6 +52,9 @@
           <button class="icon-btn" type="button" id="btn-export" title="Export SVG" aria-label="Export graph as SVG">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
+          <button class="icon-btn" type="button" id="btn-types" title="Generate TypeScript types" aria-label="Generate TypeScript types">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </button>
           <button class="icon-btn" type="button" id="btn-help" title="Keyboard shortcuts & help (?)" aria-label="Keyboard shortcuts & help" commandfor="help-dialog" command="show-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </button>
@@ -141,6 +144,7 @@
             <div class="shortcut-row"><kbd data-platform-mod>Ctrl</kbd> + <kbd>F</kbd> <span>Focus search input</span></div>
             <div class="shortcut-row"><kbd>Enter</kbd> <span>Next search result</span></div>
             <div class="shortcut-row"><kbd>Esc</kbd> <span>Clear search / Close dialogs</span></div>
+            <div class="shortcut-row"><kbd>Alt</kbd> + <kbd>T</kbd> <span>Generate TypeScript types</span></div>
             <div class="shortcut-row"><kbd>?</kbd> <span>Open this help dialog</span></div>
           </section>
           <section class="shortcuts-group">
@@ -153,6 +157,36 @@
             <div class="shortcut-row"><span>Drag & Drop</span> <span>Drop .json file anywhere</span></div>
             <div class="shortcut-row"><kbd>Scroll</kbd> / <kbd>Drag</kbd> <span>Zoom & Pan graph</span></div>
           </section>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- TypeScript Generator Dialog -->
+    <dialog id="types-dialog" class="help-dialog types-dialog" aria-labelledby="types-dialog-title" closedby="any">
+      <div class="help-dialog-content">
+        <header class="help-dialog-header">
+          <h2 id="types-dialog-title">Generate TypeScript</h2>
+          <form method="dialog">
+            <button class="icon-btn" type="submit" id="btn-close-types" aria-label="Close dialog">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+        </header>
+        <div class="types-dialog-controls">
+          <label class="types-input-label">
+            <span>Root Name</span>
+            <input type="text" id="types-root-name" value="Root" placeholder="e.g. User, Response" />
+          </label>
+          <label class="types-checkbox-label">
+            <input type="checkbox" id="types-use-type" />
+            <span>Use <code>type</code> aliases</span>
+          </label>
+        </div>
+        <div class="types-code-container">
+          <pre><code id="types-code-block"></code></pre>
+        </div>
+        <div class="types-dialog-footer">
+          <button type="button" class="action-btn" id="btn-copy-types">Copy TypeScript</button>
         </div>
       </div>
     </dialog>

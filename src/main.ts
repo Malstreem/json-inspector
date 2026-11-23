@@ -14,6 +14,7 @@ import {
 import { initPaneResizer } from './ui/pane-resizer';
 import { initFileDropAndPaste } from './ui/drop-overlay';
 import { BreadcrumbsView } from './ui/breadcrumbs';
+import { TypesDialogView } from './ui/types-dialog';
 import { getSampleJSON } from './data/sample';
 
 /**
@@ -60,8 +61,22 @@ function init(): () => void {
     zoomIn: requireElement<HTMLButtonElement>('#btn-zoom-in'),
     zoomOut: requireElement<HTMLButtonElement>('#btn-zoom-out'),
     export: requireElement<HTMLButtonElement>('#btn-export'),
+    types: requireElement<HTMLButtonElement>('#btn-types'),
   };
   const initialJson = getSampleJSON();
+
+  const typesDialog = new TypesDialogView(
+    {
+      dialog: requireElement<HTMLDialogElement>('#types-dialog'),
+      rootNameInput: requireElement<HTMLInputElement>('#types-root-name'),
+      typeAliasCheckbox: requireElement<HTMLInputElement>('#types-use-type'),
+      codeBlock: requireElement<HTMLElement>('#types-code-block'),
+      btnCopy: requireElement<HTMLButtonElement>('#btn-copy-types'),
+      btnClose: requireElement<HTMLButtonElement>('#btn-close-types'),
+    },
+    () => editor.getValue(),
+    setCopyStatus
+  );
 
   const breadcrumbBar = requireElement<HTMLElement>('#breadcrumb-bar');
   const btnCopyBreadcrumb = document.querySelector<HTMLButtonElement>('#btn-copy-breadcrumb');
@@ -185,6 +200,7 @@ function init(): () => void {
     const root = controller.getRoot();
     if (root) downloadGraphSvg(root);
   }, { signal });
+  buttons.types.addEventListener('click', () => typesDialog.show(), { signal });
 
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
   searchInput.addEventListener('input', () => {
@@ -252,6 +268,11 @@ function init(): () => void {
       void controller.formatDocument(editor.getValue()).then((content) => {
         if (!isDestroyed && content !== null) editor.setValue(content);
       });
+    }
+
+    if (event.altKey && event.key.toLowerCase() === 't') {
+      event.preventDefault();
+      typesDialog.show();
     }
   }, { signal });
 
