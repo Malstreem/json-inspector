@@ -427,11 +427,24 @@ input {
 
 #graph-group .graph-node {
   cursor: pointer;
-  transition: filter 0.15s ease-out;
+  transition: filter 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: node-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center;
+}
+
+@keyframes node-appear {
+  from {
+    opacity: 0.3;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 #graph-group .graph-node:hover > rect:first-child {
-  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.65));
 }
 
 #graph-group .graph-node.is-selected > rect,
@@ -440,15 +453,43 @@ input {
 #graph-group .graph-node:focus-visible > g > rect {
   stroke: var(--accent);
   stroke-width: 2;
-  filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.6));
+  filter: drop-shadow(0 0 14px rgba(167, 139, 250, 0.65));
+}
+
+#graph-group .graph-row {
+  transition: opacity 0.12s ease;
 }
 
 #graph-group .graph-row:hover > rect.row-hover-bg {
-  fill: rgba(255, 255, 255, 0.06);
+  fill: rgba(167, 139, 250, 0.08);
+}
+
+.expand-arrow {
+  transition: transform 0.15s ease, fill 0.15s ease;
+  user-select: none;
+}
+
+.connect-dot {
+  transition: r 0.15s ease, filter 0.15s ease;
+}
+
+.graph-row:hover .connect-dot {
+  r: 4.5;
+  filter: drop-shadow(0 0 6px var(--accent));
 }
 
 .graph-edge {
   transition: stroke 0.2s, stroke-width 0.2s, opacity 0.2s;
+  animation: edge-fade 0.22s ease-out;
+}
+
+@keyframes edge-fade {
+  from {
+    opacity: 0.1;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .graph-edge:hover {

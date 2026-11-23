@@ -132,7 +132,7 @@ function renderNode(
     if (isExpandable(row)) {
       const arrow = row.isExpanded ? '▾' : '▸';
       const arrowColor = row.isExpanded ? accentColor : '#94a3b8';
-      svg += `<text x="${tx - 2}" y="${ry + 16}" fill="${arrowColor}" font-size="12" font-family="'JetBrains Mono', monospace">${arrow}</text>`;
+      svg += `<text class="expand-arrow" x="${tx - 2}" y="${ry + 16}" fill="${arrowColor}" font-size="12" font-family="'JetBrains Mono', monospace">${arrow}</text>`;
     }
 
     // Key text
@@ -150,7 +150,7 @@ function renderNode(
     if (isExpandable(row) && row.isExpanded) {
       const dotX = node.x + node.width;
       const dotY = ry + ROW_H / 2 + 3;
-      svg += `<circle cx="${dotX}" cy="${dotY}" r="3.5" fill="${accentColor}"/>`;
+      svg += `<circle class="connect-dot" cx="${dotX}" cy="${dotY}" r="3.5" fill="${accentColor}"/>`;
     }
     svg += '</g>';
   });
