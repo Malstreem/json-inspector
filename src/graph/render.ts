@@ -290,13 +290,13 @@ export function renderGraph(
     .map(({ parent, rowIndex, child }) => {
       const parentHasMatch = parent.rows.some((r) => {
         const idx = rowIndices.get(r);
-        return idx !== undefined && highlightSet.has(idx);
+        return idx !== undefined && highlightIndices.has(idx);
       });
       const childHasMatch = child.rows.some((r) => {
         const idx = rowIndices.get(r);
-        return idx !== undefined && highlightSet.has(idx);
+        return idx !== undefined && highlightIndices.has(idx);
       });
-      const edgeDimmed = isFilterMode && highlightSet.size > 0 && (!parentHasMatch || !childHasMatch);
+      const edgeDimmed = isFilterMode && highlightIndices.size > 0 && (!parentHasMatch || !childHasMatch);
       return renderEdge(parent, rowIndex, child, edgeDimmed);
     })
     .join('');

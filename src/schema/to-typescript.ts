@@ -71,10 +71,11 @@ export function jsonToTypeScript(
       if (val.length === 0) return 'unknown[]';
 
       const elementTypes = new Set<string>();
-      const singularName = singularize(typeHintName);
+      const singularized = singularize(typeHintName);
+      const itemHint = singularized === typeHintName ? `${typeHintName}Item` : singularized;
 
       for (const item of val) {
-        elementTypes.add(inferType(item, singularName));
+        elementTypes.add(inferType(item, itemHint));
       }
 
       const typesArray = Array.from(elementTypes);
