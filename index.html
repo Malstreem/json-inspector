@@ -65,6 +65,9 @@
           <button class="icon-btn" type="button" id="btn-types" title="Generate TypeScript types" aria-label="Generate TypeScript types">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
           </button>
+          <button class="icon-btn" type="button" id="btn-diff" title="Compare / Diff JSON" aria-label="Compare JSON">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M5 7h4v10H5z"/><path d="M15 7h4v10h-4z"/></svg>
+          </button>
           <button class="icon-btn" type="button" id="btn-share" title="Share via URL link" aria-label="Share via URL link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="18" cy="5" r="3"></circle>
@@ -246,6 +249,37 @@
           </div>
           <div id="fetch-status" class="fetch-status" aria-live="polite"></div>
         </div>
+      </div>
+    </dialog>
+
+    <!-- Diff Mode Dialog -->
+    <dialog id="diff-dialog" class="help-dialog diff-dialog" aria-labelledby="diff-dialog-title" closedby="any">
+      <div class="help-dialog-content">
+        <header class="help-dialog-header">
+          <h2 id="diff-dialog-title">JSON Structural Diff</h2>
+          <form method="dialog">
+            <button class="icon-btn" type="submit" id="btn-close-diff" aria-label="Close dialog">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+        </header>
+        <div class="diff-controls">
+          <button type="button" class="text-btn" id="btn-diff-use-current">Use Current as A</button>
+          <button type="button" class="text-btn" id="btn-diff-swap">Swap A ↔ B</button>
+          <button type="button" class="action-btn" id="btn-diff-compare">Compare</button>
+        </div>
+        <div class="diff-inputs">
+          <label class="diff-pane-label">
+            <span>JSON A (Original)</span>
+            <textarea id="diff-input-a" spellcheck="false" placeholder="Paste original JSON..."></textarea>
+          </label>
+          <label class="diff-pane-label">
+            <span>JSON B (Modified)</span>
+            <textarea id="diff-input-b" spellcheck="false" placeholder="Paste modified JSON to compare..."></textarea>
+          </label>
+        </div>
+        <div id="diff-summary" class="diff-summary" aria-live="polite"></div>
+        <div id="diff-results" class="diff-results"></div>
       </div>
     </dialog>
     <script type="module" src="/src/main.ts"></script>

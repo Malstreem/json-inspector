@@ -1013,3 +1013,140 @@ input {
 .fetch-status.is-error {
   color: var(--error);
 }
+
+/* ===== Diff Dialog ===== */
+.diff-dialog {
+  max-width: 780px;
+}
+
+.diff-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.diff-controls .action-btn {
+  margin-left: auto;
+}
+
+.diff-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.diff-pane-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.diff-pane-label textarea {
+  height: 160px;
+  resize: vertical;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.diff-pane-label textarea:focus {
+  border-color: var(--accent);
+}
+
+.diff-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.diff-summary.is-error {
+  color: var(--error);
+}
+
+.diff-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.diff-badge.is-added {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--success);
+}
+
+.diff-badge.is-removed {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--error);
+}
+
+.diff-badge.is-changed {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--warning);
+}
+
+.diff-badge.is-identical {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.diff-results {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diff-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  text-align: left;
+  font-size: 12px;
+  transition: border-color var(--transition-fast);
+}
+
+.diff-item:hover {
+  border-color: var(--accent);
+}
+
+.diff-item-kind {
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.diff-item.is-added .diff-item-kind { color: var(--success); }
+.diff-item.is-removed .diff-item-kind { color: var(--error); }
+.diff-item.is-changed .diff-item-kind { color: var(--warning); }
+
+.diff-item-path {
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.diff-item-detail {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: auto;
+}

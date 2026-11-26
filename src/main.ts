@@ -18,6 +18,7 @@ import { initFileDropAndPaste } from './ui/drop-overlay';
 import { BreadcrumbsView } from './ui/breadcrumbs';
 import { TypesDialogView } from './ui/types-dialog';
 import { FetchDialogView } from './ui/fetch-dialog';
+import { DiffDialogView } from './ui/diff-dialog';
 import { createShareUrl, getJsonFromHash } from './files/url-share';
 import { getSampleJSON } from './data/sample';
 
@@ -72,6 +73,7 @@ function init(): () => void {
     zoomOut: requireElement<HTMLButtonElement>('#btn-zoom-out'),
     export: requireElement<HTMLButtonElement>('#btn-export'),
     types: requireElement<HTMLButtonElement>('#btn-types'),
+    diff: requireElement<HTMLButtonElement>('#btn-diff'),
     fetch: requireElement<HTMLButtonElement>('#btn-fetch'),
     share: requireElement<HTMLButtonElement>('#btn-share'),
   };
@@ -113,6 +115,29 @@ function init(): () => void {
       },
       onError: (message) => {
         if (!isDestroyed) setError(message);
+      },
+    }
+  );
+
+  const diffDialog = new DiffDialogView(
+    {
+      dialog: requireElement<HTMLDialogElement>('#diff-dialog'),
+      inputA: requireElement<HTMLTextAreaElement>('#diff-input-a'),
+      inputB: requireElement<HTMLTextAreaElement>('#diff-input-b'),
+      btnUseCurrent: requireElement<HTMLButtonElement>('#btn-diff-use-current'),
+      btnSwap: requireElement<HTMLButtonElement>('#btn-diff-swap'),
+      btnCompare: requireElement<HTMLButtonElement>('#btn-diff-compare'),
+      btnClose: requireElement<HTMLButtonElement>('#btn-close-diff'),
+      summaryEl: requireElement<HTMLElement>('#diff-summary'),
+      resultsEl: requireElement<HTMLElement>('#diff-results'),
+    },
+    {
+      getCurrentJson: () => editor.getValue(),
+      onSelectPath: (path) => {
+        if (isDestroyed) return;
+        editor.selectPath(path);
+        controller.highlightPath(path);
+        breadcrumbs.setPath(path);
       },
     }
   );
@@ -281,6 +306,7 @@ function init(): () => void {
     if (root) downloadGraphSvg(root);
   }, { signal });
   buttons.types.addEventListener('click', () => typesDialog.show(), { signal });
+  buttons.diff.addEventListener('click', () => diffDialog.show(), { signal });
   buttons.fetch.addEventListener('click', () => fetchDialog.show(), { signal });
   buttons.share.addEventListener('click', () => {
     const content = editor.getValue();
