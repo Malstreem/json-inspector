@@ -6,6 +6,7 @@
 }
 
 :root {
+  color-scheme: dark;
   --bg-primary: #1a1625;
   --bg-secondary: #221d30;
   --bg-tertiary: #2a2540;
@@ -331,14 +332,23 @@ input {
 /* ===== Pane Actions ===== */
 .pane-actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+
+.pane-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .text-btn {
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-size: 11px;
   color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
@@ -485,13 +495,17 @@ input {
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.65));
 }
 
-#graph-group .graph-node.is-selected > rect,
-#graph-group .graph-node.is-selected > g > rect,
-#graph-group .graph-node:focus-visible > rect,
-#graph-group .graph-node:focus-visible > g > rect {
+#graph-group .graph-node.is-selected > rect:first-child,
+#graph-group .graph-node.is-selected > g > rect:not(.row-hover-bg),
+#graph-group .graph-node:focus-visible > rect:first-child,
+#graph-group .graph-node:focus-visible > g > rect:not(.row-hover-bg) {
   stroke: var(--accent);
   stroke-width: 2;
   filter: drop-shadow(0 0 14px rgba(167, 139, 250, 0.65));
+}
+
+#graph-group .graph-node:focus-visible {
+  outline: none;
 }
 
 #graph-group .graph-row {
@@ -696,6 +710,7 @@ input {
 
 /* ===== Dialog ===== */
 .help-dialog {
+  margin: auto;
   border: 1px solid var(--border-light);
   border-radius: 8px;
   background: var(--bg-elevated);
@@ -772,7 +787,8 @@ input {
 .shortcut-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 5px;
   padding: 5px 0;
   font-size: 0.85rem;
 }
@@ -789,7 +805,8 @@ input {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.shortcut-row span {
+.shortcut-row > span:last-child {
+  margin-left: auto;
   color: var(--text-secondary);
 }
 
@@ -1026,8 +1043,18 @@ input {
   margin-bottom: 12px;
 }
 
+.diff-controls .text-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+}
+
 .diff-controls .action-btn {
   margin-left: auto;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
 }
 
 .diff-inputs {

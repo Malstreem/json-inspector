@@ -5,7 +5,8 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLi
 import { EditorState, type Extension } from '@codemirror/state';
 import { json, jsonParseLinter } from '@codemirror/lang-json';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { bracketMatching, foldGutter, foldKeymap, syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
+import { bracketMatching, foldGutter, foldKeymap, syntaxHighlighting, HighlightStyle, indentOnInput } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
 import { linter, lintGutter } from '@codemirror/lint';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
@@ -82,6 +83,16 @@ const inspectorTheme = EditorView.theme({
   },
 }, { dark: true });
 
+/** High-contrast dark syntax highlighting matching the graph palette */
+const jsonHighlightStyle = HighlightStyle.define([
+  { tag: tags.propertyName, color: '#93c5fd' },
+  { tag: tags.string, color: '#34d399' },
+  { tag: tags.number, color: '#fbbf24' },
+  { tag: tags.bool, color: '#f472b6' },
+  { tag: tags.null, color: '#94a3b8' },
+  { tag: tags.punctuation, color: '#9a95a8' },
+]);
+
 /** The base background as a highlight style won't cover */
 const baseTheme = EditorView.baseTheme({
   '&.cm-editor': {
@@ -145,7 +156,7 @@ export function createEditor(
     lintGutter(),
     inspectorTheme,
     baseTheme,
-    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    syntaxHighlighting(jsonHighlightStyle),
     updateListener,
     keymap.of([
       ...closeBracketsKeymap,
