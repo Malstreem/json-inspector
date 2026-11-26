@@ -8,6 +8,8 @@ import {
   initStatusBar,
   setCopyStatus,
   setNodeCount,
+  setDocSize,
+  setMaxDepth,
   clearError,
   setError,
 } from './ui/status-bar';
@@ -59,6 +61,8 @@ function init(): () => void {
   const btnHelp = document.querySelector<HTMLButtonElement>('#btn-help');
   const buttons = {
     format: requireElement<HTMLButtonElement>('#btn-format'),
+    minify: requireElement<HTMLButtonElement>('#btn-minify'),
+    copyDoc: requireElement<HTMLButtonElement>('#btn-copy-doc'),
     sample: requireElement<HTMLButtonElement>('#btn-sample'),
     open: requireElement<HTMLButtonElement>('#btn-open'),
     fit: requireElement<HTMLButtonElement>('#btn-fit'),
@@ -141,6 +145,8 @@ function init(): () => void {
   controller = new InspectorController(graphView, {
     onNodeCount: setNodeCount,
     onProcessingTime: setProcessingTime,
+    onDocSize: setDocSize,
+    onMaxDepth: setMaxDepth,
     onError: (message) => {
       if (message === null) clearError();
       else setError(message);
@@ -213,6 +219,29 @@ function init(): () => void {
     void controller.formatDocument(editor.getValue()).then((formatted) => {
       if (!isDestroyed && formatted !== null) editor.setValue(formatted);
     });
+  }, { signal });
+
+  buttons.minify.addEventListener('click', () => {
+    const content = editor.getValue();
+    try {
+      const parsed = JSON.parse(content);
+      editor.setValue(JSON.stringify(parsed));
+      setCopyStatus('JSON minified', false);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }, { signal });
+
+  buttons.copyDoc.addEventListener('click', () => {
+    const content = editor.getValue();
+    navigator.clipboard
+      .writeText(content)
+      .then(() => {
+        setCopyStatus('Copied JSON document to clipboard', false);
+      })
+      .catch(() => {
+        setError('Failed to copy document');
+      });
   }, { signal });
 
   buttons.sample.addEventListener('click', () => {

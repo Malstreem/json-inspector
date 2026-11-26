@@ -5,6 +5,8 @@
 const els = {
   nodes: null as HTMLElement | null,
   processingTime: null as HTMLElement | null,
+  size: null as HTMLElement | null,
+  depth: null as HTMLElement | null,
   error: null as HTMLElement | null,
   copyStatus: null as HTMLElement | null,
 };
@@ -12,8 +14,28 @@ const els = {
 export function initStatusBar(): void {
   els.nodes = document.getElementById('status-nodes');
   els.processingTime = document.getElementById('status-processing-time');
+  els.size = document.getElementById('status-size');
+  els.depth = document.getElementById('status-depth');
   els.error = document.getElementById('status-error');
   els.copyStatus = document.getElementById('status-copy');
+}
+
+export function formatByteSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+export function setDocSize(bytes: number): void {
+  if (els.size) {
+    els.size.textContent = `Size: ${formatByteSize(bytes)}`;
+  }
+}
+
+export function setMaxDepth(depth: number): void {
+  if (els.depth) {
+    els.depth.textContent = `Depth: ${depth}`;
+  }
 }
 
 export function setNodeCount(count: number): void {

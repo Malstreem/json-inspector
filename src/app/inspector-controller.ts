@@ -5,7 +5,7 @@ import {
   type GraphNode,
   type FlatRow,
 } from '../graph/projection';
-import type { JsonPath } from '../json/types';
+import { computeJsonDepth, type JsonPath } from '../json/types';
 import { searchNodes } from '../graph/search';
 import {
   JsonProcessingWorker,
@@ -29,6 +29,8 @@ export interface InspectorStatus {
   onProcessingTime: (milliseconds: number) => void;
   onError: (message: string | null) => void;
   onSearchMatchChange?: (current: number, total: number) => void;
+  onDocSize?: (bytes: number) => void;
+  onMaxDepth?: (depth: number) => void;
 }
 
 export class InspectorController {
@@ -75,6 +77,8 @@ export class InspectorController {
       this.root = root;
       this.status.onError(null);
       this.status.onNodeCount(nodeCount);
+      this.status.onDocSize?.(new TextEncoder().encode(source).length);
+      this.status.onMaxDepth?.(computeJsonDepth(root.sourceValue));
       this.refresh();
     } catch (error) {
       if (revision !== this.documentRevision) return;
@@ -240,6 +244,8 @@ export class InspectorController {
     this.matchIndex = 0;
     this.status.onNodeCount(0);
     this.status.onProcessingTime(0);
+    this.status.onDocSize?.(0);
+    this.status.onMaxDepth?.(0);
     this.graphView.clear();
   }
 

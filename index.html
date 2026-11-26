@@ -87,7 +87,9 @@
           <div class="pane-header">
             <span class="pane-title">JSON</span>
             <div class="pane-actions">
-              <button class="text-btn" type="button" id="btn-format" title="Format JSON">Format</button>
+              <button class="text-btn" type="button" id="btn-format" title="Format JSON (Ctrl+Shift+F)">Format</button>
+              <button class="text-btn" type="button" id="btn-minify" title="Minify JSON (compact)">Minify</button>
+              <button class="text-btn" type="button" id="btn-copy-doc" title="Copy entire JSON document">Copy</button>
               <button class="text-btn" type="button" id="btn-sample" title="Load sample data">Sample</button>
               <button class="text-btn" type="button" id="btn-open" title="Open file">Open</button>
               <button class="text-btn" type="button" id="btn-fetch" title="Fetch JSON from URL or API">Fetch</button>
@@ -139,6 +141,10 @@
           <span id="status-nodes">Nodes: 0</span>
           <span class="status-sep">|</span>
           <span id="status-processing-time"></span>
+          <span class="status-sep">|</span>
+          <span id="status-size" title="Document byte size">Size: 0 B</span>
+          <span class="status-sep">|</span>
+          <span id="status-depth" title="Maximum nesting depth">Depth: 0</span>
         </div>
         <div class="status-right">
           <span id="status-copy" aria-live="polite"></span>
